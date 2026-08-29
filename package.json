@@ -1,0 +1,56 @@
+{
+  "name": "elftia-plugin-quick-chat",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Standalone opaque Quick Chat app-extension for Elftia",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist/quick-chat"
+  ],
+  "scripts": {
+    "clean": "node scripts/clean.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:main": "vitest run src/main",
+    "test:renderer": "vitest run src/renderer",
+    "build": "node scripts/build.mjs",
+    "verify:contract": "node scripts/verify-contract.mjs",
+    "verify:opaque-projection": "node scripts/verify-opaque-projection.mjs",
+    "verify:artifact": "node scripts/verify-artifact.mjs",
+    "verify:artifact-negative": "node scripts/verify-artifact-negative.mjs",
+    "verify:clean-checkout": "node scripts/verify-clean-checkout.mjs",
+    "verify:dist": "elftia-plugin verify dist/quick-chat",
+    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run verify:contract && npm run build && npm run verify:opaque-projection && npm run verify:artifact && npm run verify:artifact-negative && npm run verify:clean-checkout && npm run verify:dist",
+    "verify:repro": "node scripts/verify-reproducible.mjs",
+    "pack": "node scripts/pack.mjs"
+  },
+  "devDependencies": {
+    "@elftia/agent-spec": "1.25.0",
+    "@elftia/plugin-kit": "0.1.0",
+    "@elftia/plugin-types": "file:vendor/elftia-plugin-types-1.46.0.tgz",
+    "@eslint/js": "9.39.2",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.0",
+    "@types/node": "22.19.11",
+    "@types/react": "18.3.28",
+    "@types/react-dom": "18.3.7",
+    "esbuild": "0.25.12",
+    "eslint": "9.39.2",
+    "globals": "16.5.0",
+    "jsdom": "27.4.0",
+    "prettier": "3.8.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "tar": "7.5.22",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.53.1",
+    "vitest": "4.1.11"
+  }
+}

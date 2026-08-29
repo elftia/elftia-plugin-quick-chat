@@ -1,0 +1,6 @@
+Elftia Quick Chat plugin
+Copyright (c) 2026 ATELIER AI LTD.
+
+This product consumes the MIT-licensed @elftia/plugin-types contract as a
+build-time dependency. The runtime artifact contains no Elftia Host
+implementation and no bundled React runtime.

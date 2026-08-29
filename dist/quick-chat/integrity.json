@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "algorithm": "sha256",
+  "selfExcluded": true,
+  "inventorySha256": "88a33717b029d86318204f9374fb71e0fc26a93d7ff217b691afd047491b8519",
+  "files": [
+    {
+      "path": "LICENSE",
+      "size": 1072,
+      "sha256": "3835687dced25960ff6baa3e90255088f06281ac426668bb37393949ed43233a"
+    },
+    {
+      "path": "NOTICE",
+      "size": 248,
+      "sha256": "2b7fa6f2cd0731837b813960ab4b369627c4c2f5519d2467ce4792a59c220fe8"
+    },
+    {
+      "path": "PROVENANCE.json",
+      "size": 1085,
+      "sha256": "8f1df23b03cec025ac045cdec1af813ddd6227bea7fb5eaa5309eee4e51678c1"
+    },
+    {
+      "path": "elftia-plugin.json",
+      "size": 1406,
+      "sha256": "a831c576f965fbc5cb36760b784514965170b1ad17afdc52f784914bf2c411cc"
+    },
+    {
+      "path": "main/index.cjs",
+      "size": 5056,
+      "sha256": "b9babdce39a6dff4ebe6d2896fbe7fba356287adfbae42f02520be369f92de1b"
+    },
+    {
+      "path": "main/index.cjs.map",
+      "size": 2398,
+      "sha256": "492d7aa871401c943fbdec441181a2f312bb0b6225bd82db6af3c8897362a7aa"
+    },
+    {
+      "path": "renderer/index.mjs",
+      "size": 34258,
+      "sha256": "a80f9259303a0738b61bcd8105a3d8d1e394a525663db4280d7341115461cd1d"
+    },
+    {
+      "path": "renderer/index.mjs.map",
+      "size": 22133,
+      "sha256": "6ddcc7e7379d006eb7f08008388042202f5e9b13f952cf28aae645b1bff3dcdc"
+    }
+  ]
+}

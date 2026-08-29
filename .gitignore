@@ -1,0 +1,11 @@
+node_modules/
+coverage/
+release/
+.rasen/
+*.tgz
+!vendor/elftia-plugin-types-1.46.0.tgz
+.contract-stage/
+.contract-inspect/
+.contract-source*.tar
+.repro-*/
+.fresh-verify/

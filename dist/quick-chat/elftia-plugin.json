@@ -1,0 +1,56 @@
+{
+  "name": "quick-chat",
+  "version": "0.1.0",
+  "kind": "app-extension",
+  "permissions": [
+    "host:local-channel"
+  ],
+  "displayName": "Quick Chat",
+  "description": "Compact owner-scoped Local Channel conversation surface",
+  "capabilities": {
+    "provides": [
+      {
+        "id": "elftia.quick-chat",
+        "version": "1.0.0",
+        "target": "main",
+        "cardinality": "single"
+      }
+    ]
+  },
+  "contributes": {
+    "renderer": {
+      "entry": "index.mjs",
+      "execution": "opaque-frame-v1",
+      "requiredMajor": 1,
+      "requiredMinor": 57,
+      "builtAgainst": "1.57.0",
+      "checksum": "sha512-QvFmCHRZ7N+DeW9G61RV37WwJIF5ZnUDdXBtkZKEHNMLKvnTJLEavxGZRwF8uGKtUwsNe2pjh/QCJY90jOgsZg=="
+    },
+    "main": {
+      "entry": "index.cjs",
+      "requiredMajor": 1,
+      "requiredMinor": 57,
+      "builtAgainst": "1.57.0",
+      "checksum": "sha512-jtWOHMuu1hQvr50LfFQgV70Ff+vyCvatuY5rReluXh0nCh3sFOhyxODlvIFP/WkV2lDReJOEDPx6Uc3yKMxukw=="
+    },
+    "quickChat": {
+      "id": "default",
+      "window": {
+        "defaultWidth": 380,
+        "defaultHeight": 520,
+        "minWidth": 320,
+        "minHeight": 360,
+        "maxWidth": 720,
+        "maxHeight": 900
+      }
+    },
+    "localChannels": [
+      {
+        "id": "default",
+        "displayName": "Quick Chat",
+        "targetAgentId": "builtin-elftia-clawia",
+        "exposeToAgent": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+export const PLUGIN_ID = 'quick-chat' as const;
+export const PLUGIN_VERSION = '0.1.0' as const;
+export const HOST_API_VERSION = '1.57.0' as const;
+export const SURFACE_ID = 'default' as const;
+export const ENDPOINT_ID = 'default' as const;
+export const CHAT_ID = 'owner' as const;
+export const CAPABILITY_ID = 'elftia.quick-chat' as const;
+export const CAPABILITY_VERSION = '1.0.0' as const;
+export const CAPABILITY_OPERATION = 'surface.request' as const;
+export const SURFACE_INTENT_SCHEMA_ID = 'elftia.quick-chat.surface-intent.v1' as const;
+export const SURFACE_STATE_SCHEMA_ID = 'elftia.quick-chat.surface-state.v1' as const;
+
+export const MAX_DRAFT_UTF8_BYTES = 32 * 1024;
+export const MAX_STREAM_UTF8_BYTES = 64 * 1024;
+export const MAX_STREAM_SERIALIZED_UTF8_BYTES = 64 * 1024;
+export const MAX_ACTIVITY_ITEMS = 16;
+export const MAX_ACTIVITY_FIELD_UTF8_BYTES = 1024;
+export const MAX_ACTIVITY_FIELD_SERIALIZED_UTF8_BYTES = 2 * 1024;
+export const MAX_ACTIVITY_ITEM_UTF8_BYTES = 2 * 1024;
+export const MAX_ACTIVITY_ITEM_SERIALIZED_UTF8_BYTES = 4 * 1024;
+export const MAX_ACTIVITY_SERIALIZED_UTF8_BYTES = 24 * 1024;
+export const MAX_TRANSCRIPT_SERIALIZED_UTF8_BYTES = 224 * 1024;
+export const MAX_MESSAGES = 200;
+export const MAX_RESNAPSHOT_FAILURES = 3;
+export const MAX_REMOTE_DOM_UTF8_BYTES = 512 * 1024;
+export const MAX_REMOTE_DOM_NODES = 4096;
+export const MAX_REMOTE_DOM_DEPTH = 64;
