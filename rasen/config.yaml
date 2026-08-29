@@ -20,3 +20,11 @@ tools: []
 #     tasks:
 #       - Break tasks into chunks of max 2 hours
 projectId: 1b7e5e13-d394-4166-a317-34db1d3deb33
+storeMemberships:
+  - uid: a9da9342-9665-49d7-b7bc-5ef020844acb
+    id: elftia-store
+    remote: https://github.com/elftia/eltia-store.git
+store:
+  uid: a9da9342-9665-49d7-b7bc-5ef020844acb
+  id: elftia-store
+  remote: https://github.com/elftia/eltia-store.git
