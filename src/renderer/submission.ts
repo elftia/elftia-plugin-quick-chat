@@ -1,4 +1,7 @@
-import type { HostLocalChannelClient, HostLocalChannelSendResult } from '@elftia/plugin-types';
+import type {
+  HostLocalChannelSendResult,
+  QuickChatWindowLocalChannelClient,
+} from '@elftia/plugin-types';
 
 import { MAX_DRAFT_UTF8_BYTES } from '../shared/constants';
 import { utf8Bytes } from './conversation-state';
@@ -39,7 +42,7 @@ export class LogicalSubmission {
   private uncertain: { readonly text: string; readonly clientMessageId: string } | null = null;
 
   constructor(
-    private readonly client: Pick<HostLocalChannelClient, 'send'>,
+    private readonly client: Pick<QuickChatWindowLocalChannelClient, 'send'>,
     private readonly onAccepted: (result: HostLocalChannelSendResult) => void,
     private readonly idFactory: () => string = defaultIdFactory
   ) {}

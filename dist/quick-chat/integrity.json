@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "algorithm": "sha256",
   "selfExcluded": true,
-  "inventorySha256": "88a33717b029d86318204f9374fb71e0fc26a93d7ff217b691afd047491b8519",
+  "inventorySha256": "0931db0792bc96a6c581b99bbca280a1d18d0fc625dac01e1ae6a30326189be3",
   "files": [
     {
       "path": "LICENSE",
@@ -11,38 +11,43 @@
     },
     {
       "path": "NOTICE",
-      "size": 248,
-      "sha256": "2b7fa6f2cd0731837b813960ab4b369627c4c2f5519d2467ce4792a59c220fe8"
+      "size": 320,
+      "sha256": "222fcd3d6d9750055327e382e021079b32e2c43c0ea68db9cf4ef94531b944e1"
     },
     {
       "path": "PROVENANCE.json",
-      "size": 1085,
-      "sha256": "8f1df23b03cec025ac045cdec1af813ddd6227bea7fb5eaa5309eee4e51678c1"
+      "size": 1074,
+      "sha256": "144635c5a36fa376062c9bd54c6a4a3000170158661f7e5cf4299cd08a0557e9"
+    },
+    {
+      "path": "THIRD_PARTY_LICENSES.txt",
+      "size": 1119,
+      "sha256": "d6464258b3e9098899165b73315a0a33a8077389c4f59f1aa6848b0034216936"
     },
     {
       "path": "elftia-plugin.json",
-      "size": 1406,
-      "sha256": "a831c576f965fbc5cb36760b784514965170b1ad17afdc52f784914bf2c411cc"
+      "size": 1386,
+      "sha256": "abfb4b256df5393c897936d3085dff1f02961782c319e46c9288724e6bbe3dd9"
     },
     {
       "path": "main/index.cjs",
-      "size": 5056,
-      "sha256": "b9babdce39a6dff4ebe6d2896fbe7fba356287adfbae42f02520be369f92de1b"
+      "size": 5012,
+      "sha256": "a4437cd9976714a05a6ba9bf3ec8585528b25805e2492906ae67582a30a38c27"
     },
     {
       "path": "main/index.cjs.map",
-      "size": 2398,
-      "sha256": "492d7aa871401c943fbdec441181a2f312bb0b6225bd82db6af3c8897362a7aa"
+      "size": 2354,
+      "sha256": "95891ae88b4330efae325207aae0a5762a56947a7068096963e6b52e62afbbaf"
     },
     {
       "path": "renderer/index.mjs",
-      "size": 34258,
-      "sha256": "a80f9259303a0738b61bcd8105a3d8d1e394a525663db4280d7341115461cd1d"
+      "size": 167822,
+      "sha256": "9e5ef478a0fc67a0921fd32cd2bb89803dd4e793f5814d95b5d7bbc132a04ad6"
     },
     {
       "path": "renderer/index.mjs.map",
-      "size": 22133,
-      "sha256": "6ddcc7e7379d006eb7f08008388042202f5e9b13f952cf28aae645b1bff3dcdc"
+      "size": 225080,
+      "sha256": "cf382cf0cb9b682b09c6602dbe8aa459a062a588590b6212aab549b5f4e94a16"
     }
   ]
 }

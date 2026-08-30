@@ -1,4 +1,4 @@
-/* elftia-plugin-quick-chat@0.1.0 | Host API 1.57.0 */
+/* elftia-plugin-quick-chat@0.1.0 | Host API 1.58.0 */
 "use strict";
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -43,7 +43,6 @@ var MAX_ACTIVITY_ITEM_UTF8_BYTES = 2 * 1024;
 var MAX_ACTIVITY_ITEM_SERIALIZED_UTF8_BYTES = 4 * 1024;
 var MAX_ACTIVITY_SERIALIZED_UTF8_BYTES = 24 * 1024;
 var MAX_TRANSCRIPT_SERIALIZED_UTF8_BYTES = 224 * 1024;
-var MAX_REMOTE_DOM_UTF8_BYTES = 512 * 1024;
 
 // src/shared/surface-contract.ts
 var SURFACE_OPERATIONS = [

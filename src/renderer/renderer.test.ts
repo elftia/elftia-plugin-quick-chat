@@ -1,14 +1,14 @@
 import type {
-  AgentUiQuickChatHostApi,
-  HostLocalChannelClient,
   HostLocalChannelEvent,
   HostLocalChannelMessage,
   HostLocalChannelStatus,
-  HostQuickChatSurfaceDefinition,
+  HostThemeSnapshot,
+  QuickChatWindowHost,
+  QuickChatWindowLocalChannelClient,
 } from '@elftia/plugin-types';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import React from 'react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { readFile } from 'node:fs/promises';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   MAX_ACTIVITY_SERIALIZED_UTF8_BYTES,
@@ -17,7 +17,7 @@ import {
   MAX_TRANSCRIPT_SERIALIZED_UTF8_BYTES,
 } from '../shared/constants';
 import { serializedUtf8Bytes, utf8Bytes } from './conversation-state';
-import { activate, deactivate } from './index';
+import quickChatWindowModule from './index';
 import { QUICK_CHAT_RESOURCES, resolveLocale, translate } from './localization';
 import { selectRenderableMessages } from './surface';
 
@@ -48,26 +48,24 @@ function hostMessage(
 
 function harness(
   options: {
-    messages?: HostLocalChannelMessage[];
-    localChannels?: boolean;
-    status?: HostLocalChannelStatus;
+    readonly messages?: HostLocalChannelMessage[];
+    readonly status?: HostLocalChannelStatus;
   } = {}
 ) {
   let eventListener: ((event: HostLocalChannelEvent) => void) | null = null;
-  let surface: HostQuickChatSurfaceDefinition | null = null;
-  let themeListener: (() => void) | null = null;
+  let themeListener: ((snapshot: HostThemeSnapshot) => void) | null = null;
+  let themeSnapshot: HostThemeSnapshot = { resolvedMode: 'light', isDarkMode: false };
   const order: string[] = [];
-  const unregisterSurface = vi.fn(() => order.push('surface-unregister'));
   const unregisterLocale = vi.fn(() => order.push('locale-unregister'));
   const unsubscribeTheme = vi.fn(() => order.push('theme-unsubscribe'));
   const registerNamespace = vi.fn(() => unregisterLocale);
-  const subscribeTheme = vi.fn((listener: () => void) => {
+  const subscribeTheme = vi.fn((listener: (snapshot: HostThemeSnapshot) => void) => {
     themeListener = listener;
     return unsubscribeTheme;
   });
   const messages = options.messages ?? [];
   const client = {
-    send: vi.fn<HostLocalChannelClient['send']>(({ text, clientMessageId }) =>
+    send: vi.fn<QuickChatWindowLocalChannelClient['send']>(({ text, clientMessageId }) =>
       Promise.resolve({
         accepted: true,
         duplicate: false,
@@ -99,270 +97,267 @@ function harness(
       order.push('local-detach');
       return Promise.resolve();
     }),
-  } satisfies HostLocalChannelClient;
-
-  const Button = ({ children, ...props }: Record<string, unknown>) =>
-    React.createElement('button', props, children as React.ReactNode);
+  } satisfies QuickChatWindowLocalChannelClient;
   const attach = vi.fn().mockResolvedValue(client);
+  const close = vi.fn().mockResolvedValue(undefined);
   const host = {
-    version: '1.57.0',
-    compat: { state: 'compatible' },
-    react: { instance: React, version: React.version },
-    ui: { Button } as unknown as AgentUiQuickChatHostApi['ui'],
+    version: '1.58.0',
+    compat: { builtAgainst: '1.58.0', requiredMajor: 1, requiredMinor: 58 },
     i18n: { registerNamespace },
     theme: {
-      getSnapshot: vi.fn(() => ({ resolvedMode: 'light', isDarkMode: false })),
+      getSnapshot: vi.fn(() => themeSnapshot),
       subscribe: subscribeTheme,
     },
-    quickChat: {
-      registerSurface: vi.fn((definition: HostQuickChatSurfaceDefinition) => {
-        surface = definition;
-        return unregisterSurface;
-      }),
-    },
-    ...(options.localChannels === false ? {} : { localChannels: { attach } }),
-  } as unknown as Partial<AgentUiQuickChatHostApi>;
+    localChannel: { attach },
+    close: { request: close },
+  } satisfies QuickChatWindowHost;
 
   return {
     host,
     attach,
     client,
+    close,
     order,
-    getSurface: () => surface,
-    emit: (event: HostLocalChannelEvent) => eventListener?.(event),
-    emitTheme: () => themeListener?.(),
-    unregisterSurface,
-    unregisterLocale,
-    unsubscribeTheme,
     registerNamespace,
+    unregisterLocale,
     subscribeTheme,
+    unsubscribeTheme,
+    emit: (event: HostLocalChannelEvent) => eventListener?.(event),
+    emitTheme: (snapshot: HostThemeSnapshot) => {
+      themeSnapshot = snapshot;
+      themeListener?.(snapshot);
+    },
   };
 }
 
-function requireSurface(fixture: ReturnType<typeof harness>): HostQuickChatSurfaceDefinition {
-  const surface = fixture.getSurface();
-  if (!surface) throw new Error('Quick Chat surface was not registered');
-  return surface;
+const activeDisposers: (() => void)[] = [];
+
+function activate(fixture: ReturnType<typeof harness>) {
+  const root = document.createElement('div');
+  root.dataset.testid = 'quick-chat-host-root';
+  document.body.append(root);
+  let disposer: (() => void) | undefined;
+  act(() => {
+    const result = quickChatWindowModule.activate(fixture.host, { root });
+    if (typeof result !== 'function') throw new Error('expected a synchronous disposer');
+    disposer = result;
+  });
+  if (!disposer) throw new Error('Quick Chat activation did not return a disposer');
+  activeDisposers.push(disposer);
+  return { root, dispose: disposer };
 }
 
-function mountSurface(definition: HostQuickChatSurfaceDefinition) {
-  const Surface = definition.render as unknown as React.ComponentType;
-  return render(React.createElement(Surface));
-}
+afterEach(() => {
+  act(() => {
+    for (const dispose of activeDisposers.splice(0).reverse()) dispose();
+  });
+  cleanup();
+  document.body.replaceChildren();
+});
 
-function projectedDepth(element: Element): number {
-  const childDepths = Array.from(element.children, projectedDepth);
-  return childDepths.length === 0 ? 1 : 1 + Math.max(...childDepths);
-}
-
-describe('Quick Chat renderer', () => {
-  beforeEach(() => deactivate());
-  afterEach(() => {
-    cleanup();
-    deactivate();
+describe('Quick Chat dedicated window module', () => {
+  it('default-exports exactly the sole activate lifecycle', () => {
+    expect(Object.keys(quickChatWindowModule)).toEqual(['activate']);
+    expect(typeof quickChatWindowModule.activate).toBe('function');
   });
 
-  it('registers one stable surface, locale namespace, and theme subscription', () => {
+  it('contains no Host implementation, raw native bridge, or Pet authority', async () => {
+    const source = (
+      await Promise.all(
+        [
+          'index.ts',
+          'surface.ts',
+          'conversation-session.ts',
+          'conversation-state.ts',
+          'submission.ts',
+          'localization.ts',
+          'styles.ts',
+        ].map((file) => readFile(new URL(file, import.meta.url), 'utf8'))
+      )
+    ).join('\n');
+    for (const forbidden of [
+      /@main\//,
+      /@elftia\/shared/,
+      /from\s+['"](?:electron|node:)/,
+      /ipcRenderer/,
+      /window\.native/,
+      /\bpreload\b/i,
+      /AgentUiQuickChatHostApi/,
+      /AgentUiHostApi/,
+      /HostLocalChannels/,
+      /petRuntime/,
+      /petNative/,
+      /capabilityToken/,
+      /registerSurface/,
+    ]) {
+      expect(source).not.toMatch(forbidden);
+    }
+  });
+
+  it('fails closed for a missing scoped Host or invalid root', () => {
+    const root = document.createElement('div');
+    expect(() => quickChatWindowModule.activate({} as QuickChatWindowHost, { root })).toThrow(
+      /Host/
+    );
+    expect(() =>
+      quickChatWindowModule.activate(harness().host, { root: null as unknown as HTMLElement })
+    ).toThrow(/HTMLElement/);
+    expect(root).toBeEmptyDOMElement();
+  });
+
+  it('owns the complete UI, styles, fixed attach, focus, and theme projection', async () => {
     const fixture = harness();
-    activate(fixture.host);
+    const { root } = activate(fixture);
     expect(fixture.registerNamespace).toHaveBeenCalledWith('quick-chat', QUICK_CHAT_RESOURCES);
     expect(fixture.subscribeTheme).toHaveBeenCalledOnce();
-    expect(fixture.getSurface()?.id).toBe('default');
-  });
-
-  it('renders loading then the empty accessible transcript and marks read', async () => {
-    const fixture = harness();
-    activate(fixture.host);
-    mountSurface(requireSurface(fixture));
-    expect(screen.getByTestId('quick-chat-state')).toHaveTextContent('Loading');
     await screen.findByTestId('quick-chat-empty');
-    expect(screen.getByRole('log')).toHaveAttribute('aria-live', 'polite');
-    expect(screen.getByLabelText('Message Elfi')).toBeEnabled();
+    expect(fixture.attach).toHaveBeenCalledWith();
+    expect(fixture.client.subscribe).toHaveBeenCalledBefore(fixture.client.getSnapshot);
     expect(fixture.client.markRead).toHaveBeenCalledOnce();
+    expect(screen.getByRole('heading', { name: 'Quick Chat' })).toBeInTheDocument();
+    expect(screen.getByRole('log')).toHaveAttribute('aria-live', 'polite');
+    await waitFor(() => expect(screen.getByLabelText('Message Elfi')).toHaveFocus());
+    const css = screen.getByTestId('quick-chat-styles').textContent;
+    expect(css).toContain('-webkit-app-region: drag');
+    expect(css).toContain('-webkit-app-region: no-drag');
+    expect(css).toContain(':focus-visible');
+    expect(root.querySelector('[data-theme="light"]')).not.toBeNull();
+
+    act(() => fixture.emitTheme({ resolvedMode: 'dark', isDarkMode: true }));
+    expect(root.querySelector('[data-theme="dark"]')).not.toBeNull();
   });
 
-  it('renders transcript text inertly and shows bounded history notice', async () => {
-    const malicious = '<script>alert(1)</script> **markdown** onclick="x"';
+  it('routes close only through the bounded Host intent', async () => {
+    const fixture = harness({ status: 'processing' });
+    activate(fixture);
+    fireEvent.click(await screen.findByLabelText('Close Quick Chat'));
+    expect(fixture.close).toHaveBeenCalledOnce();
+    expect(fixture.client.stop).not.toHaveBeenCalled();
+    expect(fixture.client.detach).not.toHaveBeenCalled();
+  });
+
+  it('renders hostile transcript content as inert bounded text', async () => {
+    const malicious = '<script>alert(1)</script><img src=x onerror=alert(2)> **markdown**';
     const fixture = harness({ messages: [hostMessage(0, malicious, 'assistant')] });
-    activate(fixture.host);
-    const view = mountSurface(requireSurface(fixture));
+    const { root } = activate(fixture);
     expect(await screen.findByText(malicious)).toBeInTheDocument();
-    expect(view.container.querySelector('script')).toBeNull();
-    expect(view.container.innerHTML).not.toContain('<script>alert');
+    expect(root.querySelector('script')).toBeNull();
+    expect(root.querySelector('img')).toBeNull();
+    expect(root.innerHTML).not.toContain('<script>alert');
   });
 
-  it('submits once, clears the draft, and reconciles the Host message', async () => {
-    const fixture = harness();
-    activate(fixture.host);
-    mountSurface(requireSurface(fixture));
-    const input = await screen.findByLabelText('Message Elfi');
-    fireEvent.change(input, { target: { value: 'hello' } });
-    fireEvent.click(screen.getByLabelText('Send message'));
-    await waitFor(() => expect(fixture.client.send).toHaveBeenCalledOnce());
-    const firstCall = fixture.client.send.mock.calls[0]?.[0];
-    expect(firstCall).toMatchObject({ text: 'hello' });
-    expect(firstCall?.clientMessageId).toMatch(/^[0-9a-f-]{36}$/i);
-    await waitFor(() => expect(input).toHaveValue(''));
-    expect(screen.getByText('hello')).toBeInTheDocument();
-  });
-
-  it('owns rapid submission synchronously until the first completion settles', async () => {
-    const accepted = deferred<Awaited<ReturnType<HostLocalChannelClient['send']>>>();
+  it('submits once, preserves a newer draft, and reconciles the Host message', async () => {
+    const accepted = deferred<Awaited<ReturnType<QuickChatWindowLocalChannelClient['send']>>>();
     const fixture = harness();
     fixture.client.send.mockImplementationOnce(() => accepted.promise);
-    activate(fixture.host);
-    mountSurface(requireSurface(fixture));
+    activate(fixture);
     const input = await screen.findByLabelText('Message Elfi');
     const send = screen.getByLabelText('Send message');
     fireEvent.change(input, { target: { value: 'first' } });
-
-    await act(async () => {
-      send.click();
-      send.click();
-      await Promise.resolve();
-    });
+    fireEvent.click(send);
+    fireEvent.click(send);
     expect(fixture.client.send).toHaveBeenCalledOnce();
-    expect(input).toBeDisabled();
-    expect(send).toBeDisabled();
     const request = fixture.client.send.mock.calls[0]?.[0];
-    if (!request) throw new Error('expected the first logical send');
-
+    if (!request) throw new Error('expected one logical send');
+    fireEvent.change(input, { target: { value: 'second' } });
     accepted.resolve({
       accepted: true,
       duplicate: false,
-      message: {
-        ...hostMessage(0, 'first'),
-        clientMessageId: request.clientMessageId,
-      },
+      message: { ...hostMessage(0, 'first'), clientMessageId: request.clientMessageId },
     });
-    await act(async () => {
-      await accepted.promise;
-      await Promise.resolve();
-    });
-    await waitFor(() => expect(send).toBeEnabled());
-    expect(input).toHaveValue('');
-
-    fireEvent.change(input, { target: { value: 'second' } });
-    await act(async () => await Promise.resolve());
-    expect(input).toHaveValue('second');
-    expect(fixture.client.send).toHaveBeenCalledOnce();
+    await accepted.promise;
+    await waitFor(() => expect(input).toHaveValue('second'));
+    expect(screen.getByText('first')).toBeInTheDocument();
   });
 
-  it('shows Stop only while processing and does not detach when stopping', async () => {
+  it('shows Stop only while processing and keeps the attachment alive', async () => {
     const fixture = harness();
-    activate(fixture.host);
-    mountSurface(requireSurface(fixture));
+    activate(fixture);
     await screen.findByTestId('quick-chat-empty');
     expect(screen.queryByLabelText('Stop response')).toBeNull();
-    fixture.emit({ type: 'status', revision: 1, status: 'processing' });
+    act(() => fixture.emit({ type: 'status', revision: 1, status: 'processing' }));
     fireEvent.click(await screen.findByLabelText('Stop response'));
     await waitFor(() => expect(fixture.client.stop).toHaveBeenCalledOnce());
     expect(fixture.client.detach).not.toHaveBeenCalled();
   });
 
-  it('contains a rejected Stop as localized retryable UI state', async () => {
-    const fixture = harness();
-    fixture.client.stop.mockRejectedValueOnce(new Error('private transport detail'.repeat(1000)));
-    activate(fixture.host);
-    mountSurface(requireSurface(fixture));
-    await screen.findByTestId('quick-chat-empty');
-    fixture.emit({ type: 'status', revision: 1, status: 'processing' });
-    fireEvent.click(await screen.findByLabelText('Stop response'));
-    expect(await screen.findByText('The conversation could not be refreshed.')).toBeInTheDocument();
-    expect(screen.queryByText(/private transport detail/)).toBeNull();
-    expect(screen.getByLabelText('Retry')).toBeInTheDocument();
-  });
-
-  it('contains a rejected initial attach and recovers through localized Retry', async () => {
-    const fixture = harness();
-    fixture.attach.mockRejectedValueOnce(new Error('private attach detail'.repeat(1000)));
-    activate(fixture.host);
-    mountSurface(requireSurface(fixture));
-    expect(await screen.findByText('The conversation could not be refreshed.')).toBeInTheDocument();
-    expect(screen.queryByText(/private attach detail/)).toBeNull();
-    fireEvent.click(screen.getByLabelText('Retry'));
-    await screen.findByTestId('quick-chat-empty');
-    expect(fixture.attach).toHaveBeenCalledTimes(2);
-  });
-
-  it('renders a revoked state with a bounded reattach action', async () => {
-    const fixture = harness();
-    activate(fixture.host);
-    mountSurface(requireSurface(fixture));
-    await screen.findByTestId('quick-chat-empty');
-    fixture.emit({ type: 'revoked', code: 'NOT_DECLARED' });
-    expect(await screen.findByText('Quick Chat is unavailable.')).toBeInTheDocument();
-    expect(screen.getByLabelText('Message Elfi')).toBeDisabled();
-    expect(screen.getByLabelText('Send message')).toBeDisabled();
-    expect(screen.getByLabelText('Retry')).toBeInTheDocument();
-    fireEvent.click(screen.getByLabelText('Retry'));
-    await waitFor(() => expect(fixture.attach).toHaveBeenCalledTimes(2));
-  });
-
-  it('renders a suspended snapshot with a bounded reattach action', async () => {
-    const fixture = harness({ status: 'suspended' });
-    activate(fixture.host);
-    mountSurface(requireSurface(fixture));
-    expect(await screen.findByText('Quick Chat is temporarily suspended.')).toBeInTheDocument();
-    expect(screen.getByLabelText('Message Elfi')).toBeDisabled();
-    expect(screen.getByLabelText('Send message')).toBeDisabled();
-    fireEvent.click(screen.getByLabelText('Retry'));
-    await waitFor(() => expect(fixture.attach).toHaveBeenCalledTimes(2));
-  });
-
-  it('renders a suspended status event with a bounded reattach action', async () => {
-    const fixture = harness();
-    activate(fixture.host);
-    mountSurface(requireSurface(fixture));
-    await screen.findByTestId('quick-chat-empty');
-    fixture.emit({ type: 'status', revision: 1, status: 'suspended' });
-    expect(await screen.findByText('Quick Chat is temporarily suspended.')).toBeInTheDocument();
-    fireEvent.click(screen.getByLabelText('Retry'));
-    await waitFor(() => expect(fixture.attach).toHaveBeenCalledTimes(2));
-  });
-
-  it('renders bounded reasoning activity even when no text delta exists', async () => {
-    const fixture = harness();
-    activate(fixture.host);
-    mountSurface(requireSurface(fixture));
-    await screen.findByTestId('quick-chat-empty');
-    fixture.emit({
-      type: 'stream',
-      revision: 1,
-      stream: { type: 'reasoning', text: '\u0000'.repeat(1024 * 1024) },
+  it('owns transcript-tail scrolling as messages and stream state advance', async () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoView,
     });
-    const stream = await screen.findByTestId('quick-chat-stream');
-    expect(stream).toBeInTheDocument();
-    expect(stream.textContent).not.toBe('');
-    expect(utf8Bytes(JSON.stringify(stream.textContent))).toBeLessThanOrEqual(
-      MAX_ACTIVITY_SERIALIZED_UTF8_BYTES
-    );
-  });
-
-  it('degrades to an unavailable semantic surface without Local Channels', () => {
-    const fixture = harness({ localChannels: false });
-    activate(fixture.host);
-    mountSurface(requireSurface(fixture));
-    expect(screen.getByRole('status')).toHaveTextContent('unavailable');
-  });
-
-  it('disposes surface, locale, theme, subscription, then detaches without Stop', async () => {
     const fixture = harness();
-    activate(fixture.host);
-    const view = mountSurface(requireSurface(fixture));
+    activate(fixture);
     await screen.findByTestId('quick-chat-empty');
-    fixture.emitTheme();
-    view.unmount();
+    scrollIntoView.mockClear();
+    act(() => {
+      fixture.emit({
+        type: 'message',
+        revision: 1,
+        message: hostMessage(0, 'replayed response', 'assistant'),
+      });
+      fixture.emit({
+        type: 'stream',
+        revision: 2,
+        stream: { type: 'text', delta: 'stream delta' },
+      });
+    });
+    expect(await screen.findByText('replayed response')).toBeInTheDocument();
+    expect(await screen.findByText('stream delta')).toBeInTheDocument();
+    expect(scrollIntoView).toHaveBeenCalled();
+  });
+
+  it('disposes subscriptions and attachment once without stop or DOM revival', async () => {
+    const fixture = harness();
+    const { root, dispose } = activate(fixture);
+    await screen.findByTestId('quick-chat-empty');
+    act(() => {
+      dispose();
+      dispose();
+      globalThis.dispatchEvent(new Event('pagehide'));
+    });
     await waitFor(() => expect(fixture.client.detach).toHaveBeenCalledOnce());
     expect(fixture.order.indexOf('local-unsubscribe')).toBeLessThan(
       fixture.order.indexOf('local-detach')
     );
-    deactivate();
-    deactivate();
-    expect(fixture.unregisterSurface).toHaveBeenCalledOnce();
     expect(fixture.unregisterLocale).toHaveBeenCalledOnce();
     expect(fixture.unsubscribeTheme).toHaveBeenCalledOnce();
     expect(fixture.client.stop).not.toHaveBeenCalled();
+    expect(root).toBeEmptyDOMElement();
+    act(() => fixture.emitTheme({ resolvedMode: 'dark', isDarkMode: true }));
+    expect(root).toBeEmptyDOMElement();
+  });
+
+  it('detaches a deferred attachment acquired after disposal without subscribing', async () => {
+    const fixture = harness();
+    const attached = deferred<QuickChatWindowLocalChannelClient>();
+    fixture.attach.mockImplementationOnce(() => attached.promise);
+    const { root, dispose } = activate(fixture);
+    act(() => dispose());
+    attached.resolve(fixture.client);
+    await attached.promise;
+    await waitFor(() => expect(fixture.client.detach).toHaveBeenCalledOnce());
+    expect(fixture.client.subscribe).not.toHaveBeenCalled();
+    expect(fixture.client.stop).not.toHaveBeenCalled();
+    expect(root).toBeEmptyDOMElement();
+  });
+
+  it('renders bounded live reasoning activity', async () => {
+    const fixture = harness();
+    activate(fixture);
+    await screen.findByTestId('quick-chat-empty');
+    act(() =>
+      fixture.emit({
+        type: 'stream',
+        revision: 1,
+        stream: { type: 'reasoning', text: '\u0000'.repeat(1024 * 1024) },
+      })
+    );
+    const stream = await screen.findByTestId('quick-chat-stream');
+    expect(utf8Bytes(JSON.stringify(stream.textContent))).toBeLessThanOrEqual(
+      MAX_ACTIVITY_SERIALIZED_UTF8_BYTES
+    );
   });
 });
 
@@ -377,7 +372,7 @@ describe('localization and projection bounds', () => {
     expect(translate(input, 'title')).toBe(title);
   });
 
-  it('bounds maximum transcript projection to 200 messages and 224 KiB serialized text', () => {
+  it('bounds transcript projection to 200 messages and 224 KiB serialized text', () => {
     const content = '界'.repeat(2_000);
     const messages = Array.from({ length: MAX_MESSAGES + 20 }, (_, index) =>
       hostMessage(index, content, index % 2 ? 'assistant' : 'user')
@@ -385,58 +380,51 @@ describe('localization and projection bounds', () => {
     const result = selectRenderableMessages(messages);
     expect(result.messages.length).toBeLessThanOrEqual(MAX_MESSAGES);
     expect(result.omitted).toBe(true);
-    expect(result.messages.length).toBeLessThanOrEqual(MAX_MESSAGES);
+    expect(
+      serializedUtf8Bytes(result.messages.map((message) => message.content))
+    ).toBeLessThanOrEqual(MAX_TRANSCRIPT_SERIALIZED_UTF8_BYTES);
+    expect(MAX_STREAM_UTF8_BYTES).toBe(64 * 1024);
+  });
+
+  it('reserves array delimiters at the exact single-string boundary', () => {
+    const content = 'x'.repeat(MAX_TRANSCRIPT_SERIALIZED_UTF8_BYTES - 2);
+    const result = selectRenderableMessages([hostMessage(0, content)]);
+
+    expect(serializedUtf8Bytes(content)).toBe(MAX_TRANSCRIPT_SERIALIZED_UTF8_BYTES);
+    expect(serializedUtf8Bytes([content])).toBe(MAX_TRANSCRIPT_SERIALIZED_UTF8_BYTES + 2);
+    expect(result.messages).toHaveLength(1);
+    expect(result.messages[0]?.content.endsWith('…')).toBe(true);
+    expect(result.omitted).toBe(true);
     expect(
       serializedUtf8Bytes(result.messages.map((message) => message.content))
     ).toBeLessThanOrEqual(MAX_TRANSCRIPT_SERIALIZED_UTF8_BYTES);
   });
 
-  it('keeps the stream ceiling below the remote frame budget', () => {
-    expect(MAX_STREAM_UTF8_BYTES).toBe(64 * 1024);
-    expect(MAX_STREAM_UTF8_BYTES + MAX_TRANSCRIPT_SERIALIZED_UTF8_BYTES).toBeLessThan(512 * 1024);
+  it('keeps an escaping-heavy oversized message within the array-wide ceiling', () => {
+    const content = '\u0000"\\'.repeat(Math.ceil(MAX_TRANSCRIPT_SERIALIZED_UTF8_BYTES / 3));
+    const result = selectRenderableMessages([hostMessage(0, content)]);
+
+    expect(serializedUtf8Bytes([content])).toBeGreaterThan(MAX_TRANSCRIPT_SERIALIZED_UTF8_BYTES);
+    expect(result.messages).toHaveLength(1);
+    expect(result.messages[0]?.content.endsWith('…')).toBe(true);
+    expect(result.omitted).toBe(true);
+    expect(
+      serializedUtf8Bytes(result.messages.map((message) => message.content))
+    ).toBeLessThanOrEqual(MAX_TRANSCRIPT_SERIALIZED_UTF8_BYTES);
   });
 
-  it('keeps the maximum semantic projection inside opaque-frame quotas', async () => {
-    const messages = Array.from({ length: MAX_MESSAGES }, (_, index) =>
-      hostMessage(index, `message-${index}-${'x'.repeat(1_700)}`, index % 2 ? 'assistant' : 'user')
-    );
-    const fixture = harness({ messages });
-    activate(fixture.host);
-    const view = mountSurface(requireSurface(fixture));
-    await waitFor(() =>
-      expect(
-        view.container.querySelectorAll('[data-testid^="quick-chat-message-"]').length
-      ).toBeGreaterThan(0)
-    );
+  it('selects newest messages first and returns them in chronological order', () => {
+    const content = 'x'.repeat(80 * 1024);
+    const result = selectRenderableMessages([
+      hostMessage(0, content),
+      hostMessage(1, content),
+      hostMessage(2, content),
+    ]);
+
+    expect(result.messages.map((message) => message.id)).toEqual(['message-1', 'message-2']);
+    expect(result.omitted).toBe(true);
     expect(
-      view.container.querySelectorAll('[data-testid^="quick-chat-message-"]').length
-    ).toBeLessThanOrEqual(MAX_MESSAGES);
-    expect(screen.getByTestId('quick-chat-budget-notice')).toBeInTheDocument();
-
-    fixture.emit({
-      type: 'stream',
-      revision: MAX_MESSAGES + 1,
-      stream: { type: 'text', delta: '界'.repeat(MAX_STREAM_UTF8_BYTES) },
-    });
-    for (let index = 0; index < 20; index += 1) {
-      fixture.emit({
-        type: 'stream',
-        revision: MAX_MESSAGES + index + 2,
-        stream: { type: 'reasoning', text: `activity-${index}` },
-      });
-    }
-    const stream = await screen.findByTestId('quick-chat-stream');
-    await waitFor(() => expect(stream.querySelectorAll('p')).toHaveLength(17));
-
-    const elements = Array.from(view.container.querySelectorAll('*'));
-    expect(elements.length).toBeLessThanOrEqual(4_096);
-    expect(projectedDepth(view.container)).toBeLessThanOrEqual(64);
-    expect(utf8Bytes(view.container.innerHTML)).toBeLessThanOrEqual(512 * 1024);
-    for (const element of elements) {
-      for (const attribute of Array.from(element.attributes)) {
-        expect(['class', 'style', 'href', 'src', 'ref'].includes(attribute.name)).toBe(false);
-        expect(attribute.name.startsWith('on')).toBe(false);
-      }
-    }
+      serializedUtf8Bytes(result.messages.map((message) => message.content))
+    ).toBeLessThanOrEqual(MAX_TRANSCRIPT_SERIALIZED_UTF8_BYTES);
   });
 });

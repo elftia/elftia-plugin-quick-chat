@@ -6,8 +6,13 @@ import { c as createTar } from 'tar';
 import { inventory } from './artifact-utils.mjs';
 
 const root = resolve(import.meta.dirname, '..');
-const artifact = resolve(root, 'dist', 'quick-chat');
-const release = resolve(root, 'release');
+const outputRoot = process.env.QUICK_CHAT_DIST_ROOT
+  ? resolve(process.env.QUICK_CHAT_DIST_ROOT)
+  : resolve(root, 'dist');
+const artifact = resolve(outputRoot, 'quick-chat');
+const release = process.env.QUICK_CHAT_RELEASE_ROOT
+  ? resolve(process.env.QUICK_CHAT_RELEASE_ROOT)
+  : resolve(root, 'release');
 const archive = resolve(release, 'quick-chat-0.1.0.tgz');
 const files = (await inventory(artifact)).map((entry) => entry.path);
 

@@ -1,8 +1,8 @@
 import type {
-  HostLocalChannelClient,
   HostLocalChannelEvent,
   HostLocalChannelSnapshot,
-  HostLocalChannels,
+  QuickChatWindowLocalChannel,
+  QuickChatWindowLocalChannelClient,
 } from '@elftia/plugin-types';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -56,7 +56,7 @@ function client(getSnapshot = vi.fn().mockResolvedValue(snapshot())) {
     }),
     markRead: vi.fn().mockResolvedValue(undefined),
     detach: vi.fn().mockResolvedValue(undefined),
-  } satisfies HostLocalChannelClient;
+  } satisfies QuickChatWindowLocalChannelClient;
   return { value, unsubscribe, emit: (event: HostLocalChannelEvent) => listener?.(event) };
 }
 
@@ -68,6 +68,8 @@ describe('ConversationSession lifecycle', () => {
     const states: number[] = [];
     const session = new ConversationSession(channels, (state) => states.push(state.revision));
     const start = session.start();
+    expect(channels.attach).toHaveBeenCalledWith();
+    expect(Object.keys(channels)).toEqual(['attach']);
     await vi.waitFor(() => expect(fixture.value.subscribe).toHaveBeenCalledOnce());
     fixture.emit({ type: 'status', revision: 1, status: 'processing' });
     initial.resolve(snapshot(0));
@@ -76,6 +78,25 @@ describe('ConversationSession lifecycle', () => {
     expect(fixture.value.markRead).toHaveBeenCalledOnce();
     expect(states).toEqual([0, 1]);
   });
+
+  it.each([{ endpointId: 'other' }, { chatId: 'other' }] as const)(
+    'rejects a Host snapshot with another fixed identity (case %#)',
+    async (identityPatch) => {
+      const fixture = client(vi.fn().mockResolvedValue({ ...snapshot(), ...identityPatch }));
+      const session = new ConversationSession(
+        { attach: vi.fn().mockResolvedValue(fixture.value) },
+        vi.fn()
+      );
+      await session.start();
+      expect(session.getState().error).toEqual({
+        code: 'ATTACH_FAILED',
+        message: 'Quick Chat attachment failed.',
+        retryable: true,
+      });
+      expect(fixture.value.detach).toHaveBeenCalledOnce();
+      expect(fixture.value.stop).not.toHaveBeenCalled();
+    }
+  );
 
   it('queues a second refresh when a higher gap arrives during an in-flight resnapshot', async () => {
     const firstReplacement = deferred<HostLocalChannelSnapshot>();
@@ -132,7 +153,7 @@ describe('ConversationSession lifecycle', () => {
         order.push('detach');
         return Promise.resolve();
       }),
-    } satisfies HostLocalChannelClient;
+    } satisfies QuickChatWindowLocalChannelClient;
     const session = new ConversationSession({ attach: vi.fn().mockResolvedValue(value) }, vi.fn());
     await session.start();
     await session.dispose();
@@ -161,7 +182,7 @@ describe('ConversationSession lifecycle', () => {
     const first = client();
     const second = client(vi.fn().mockResolvedValue(snapshot(8)));
     const attach = vi
-      .fn<HostLocalChannels['attach']>()
+      .fn<QuickChatWindowLocalChannel['attach']>()
       .mockResolvedValueOnce(first.value)
       .mockResolvedValueOnce(second.value);
     const session = new ConversationSession({ attach }, vi.fn());
@@ -188,7 +209,7 @@ describe('ConversationSession lifecycle', () => {
       })
     );
     const attach = vi
-      .fn<HostLocalChannels['attach']>()
+      .fn<QuickChatWindowLocalChannel['attach']>()
       .mockResolvedValueOnce(first.value)
       .mockResolvedValueOnce(second.value);
     const session = new ConversationSession({ attach }, vi.fn());
@@ -218,7 +239,7 @@ describe('ConversationSession lifecycle', () => {
       .mockImplementationOnce(() => staleMarkRead.promise);
     const second = client(vi.fn().mockResolvedValue(snapshot(10)));
     const attach = vi
-      .fn<HostLocalChannels['attach']>()
+      .fn<QuickChatWindowLocalChannel['attach']>()
       .mockResolvedValueOnce(first.value)
       .mockResolvedValueOnce(second.value);
     const session = new ConversationSession({ attach }, vi.fn());
@@ -239,7 +260,7 @@ describe('ConversationSession lifecycle', () => {
     first.value.detach.mockImplementationOnce(() => detached.promise);
     const second = client(vi.fn().mockResolvedValue(snapshot(10)));
     const attach = vi
-      .fn<HostLocalChannels['attach']>()
+      .fn<QuickChatWindowLocalChannel['attach']>()
       .mockResolvedValueOnce(first.value)
       .mockResolvedValueOnce(second.value);
     const session = new ConversationSession({ attach }, vi.fn());
@@ -260,9 +281,9 @@ describe('ConversationSession lifecycle', () => {
   });
 
   it('coalesces start and deterministically detaches an attach superseded by dispose', async () => {
-    const attached = deferred<HostLocalChannelClient>();
+    const attached = deferred<QuickChatWindowLocalChannelClient>();
     const fixture = client();
-    const attach = vi.fn<HostLocalChannels['attach']>(() => attached.promise);
+    const attach = vi.fn<QuickChatWindowLocalChannel['attach']>(() => attached.promise);
     const session = new ConversationSession({ attach }, vi.fn());
     const firstStart = session.start();
     const secondStart = session.start();
@@ -309,7 +330,7 @@ describe('ConversationSession lifecycle', () => {
     const second = client(vi.fn().mockResolvedValue(snapshot(8)));
     second.value.stop.mockRejectedValueOnce(new Error('stop failed'));
     const attach = vi
-      .fn<HostLocalChannels['attach']>()
+      .fn<QuickChatWindowLocalChannel['attach']>()
       .mockResolvedValueOnce(first.value)
       .mockResolvedValueOnce(second.value);
     const session = new ConversationSession({ attach }, vi.fn());

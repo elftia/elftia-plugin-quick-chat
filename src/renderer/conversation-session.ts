@@ -1,7 +1,8 @@
 import type {
-  HostLocalChannelClient,
   HostLocalChannelEvent,
-  HostLocalChannels,
+  HostLocalChannelSnapshot,
+  QuickChatWindowLocalChannel,
+  QuickChatWindowLocalChannelClient,
 } from '@elftia/plugin-types';
 
 import { CHAT_ID, ENDPOINT_ID } from '../shared/constants';
@@ -12,15 +13,21 @@ import {
 } from './conversation-state';
 import { LogicalSubmission, type SubmitOutcome } from './submission';
 
+function assertFixedSnapshot(snapshot: HostLocalChannelSnapshot): void {
+  if (snapshot.endpointId !== ENDPOINT_ID || snapshot.chatId !== CHAT_ID) {
+    throw new Error('Host returned another Local Channel conversation');
+  }
+}
+
 export class ConversationSession {
   private state: ConversationState = INITIAL_CONVERSATION_STATE;
-  private client: HostLocalChannelClient | null = null;
+  private client: QuickChatWindowLocalChannelClient | null = null;
   private unsubscribe: (() => void) | null = null;
   private submission: LogicalSubmission | null = null;
   private initialReady = false;
   private bufferedEvents: HostLocalChannelEvent[] = [];
   private refreshPromise: Promise<void> | null = null;
-  private refreshClient: HostLocalChannelClient | null = null;
+  private refreshClient: QuickChatWindowLocalChannelClient | null = null;
   private refreshEpoch = 0;
   private refreshQueued = false;
   private lifecyclePromise: Promise<void> | null = null;
@@ -28,7 +35,7 @@ export class ConversationSession {
   private disposed = false;
 
   constructor(
-    private readonly channels: HostLocalChannels,
+    private readonly channels: QuickChatWindowLocalChannel,
     private readonly onState: (state: ConversationState) => void,
     private readonly idFactory?: () => string
   ) {}
@@ -62,7 +69,7 @@ export class ConversationSession {
         try {
           const snapshot = await client.getSnapshot();
           if (!this.isCurrent(epoch, client)) return;
-          if (snapshot.chatId !== CHAT_ID) throw new Error('Host returned another chat snapshot');
+          assertFixedSnapshot(snapshot);
           this.dispatchCurrent(epoch, client, { type: 'snapshot', snapshot });
           await this.markRead(epoch, client);
         } catch {
@@ -155,20 +162,20 @@ export class ConversationSession {
 
   private dispatchCurrent(
     epoch: number,
-    client: HostLocalChannelClient,
+    client: QuickChatWindowLocalChannelClient,
     action: Parameters<typeof conversationReducer>[1]
   ): void {
     if (!this.isCurrent(epoch, client)) return;
     this.dispatch(action);
   }
 
-  private shouldContinueRefresh(epoch: number, client: HostLocalChannelClient): boolean {
+  private shouldContinueRefresh(epoch: number, client: QuickChatWindowLocalChannelClient): boolean {
     return this.isCurrent(epoch, client) && (this.refreshQueued || this.state.needsSnapshot);
   }
 
   private isCurrent(
     epoch: number,
-    client: HostLocalChannelClient,
+    client: QuickChatWindowLocalChannelClient,
     submission?: LogicalSubmission
   ): boolean {
     return (
@@ -181,7 +188,7 @@ export class ConversationSession {
 
   private handleEvent(
     epoch: number,
-    client: HostLocalChannelClient,
+    client: QuickChatWindowLocalChannelClient,
     event: HostLocalChannelEvent
   ): void {
     if (!this.isCurrent(epoch, client)) return;
@@ -211,9 +218,9 @@ export class ConversationSession {
   }
 
   private async connect(epoch: number): Promise<void> {
-    let attachedClient: HostLocalChannelClient | null = null;
+    let attachedClient: QuickChatWindowLocalChannelClient | null = null;
     try {
-      const client = await this.channels.attach({ endpointId: ENDPOINT_ID, chatId: CHAT_ID });
+      const client = await this.channels.attach();
       attachedClient = client;
       if (this.disposed || this.lifecycleEpoch !== epoch) {
         await this.detachClient(client);
@@ -235,7 +242,7 @@ export class ConversationSession {
       this.submission = submission;
       const snapshot = await client.getSnapshot();
       if (!this.isCurrent(epoch, client)) return;
-      if (snapshot.chatId !== CHAT_ID) throw new Error('Host returned another chat snapshot');
+      assertFixedSnapshot(snapshot);
       this.dispatchCurrent(epoch, client, { type: 'snapshot', snapshot });
       this.initialReady = true;
       const buffered = this.bufferedEvents;
@@ -261,7 +268,7 @@ export class ConversationSession {
     }
   }
 
-  private async markRead(epoch: number, client: HostLocalChannelClient): Promise<void> {
+  private async markRead(epoch: number, client: QuickChatWindowLocalChannelClient): Promise<void> {
     if (!this.isCurrent(epoch, client)) return;
     try {
       await client.markRead();
@@ -296,7 +303,7 @@ export class ConversationSession {
     if (client) await this.detachClient(client);
   }
 
-  private async detachClient(client: HostLocalChannelClient): Promise<void> {
+  private async detachClient(client: QuickChatWindowLocalChannelClient): Promise<void> {
     try {
       await client.detach();
     } catch {

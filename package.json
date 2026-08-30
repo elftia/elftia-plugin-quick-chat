@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Standalone opaque Quick Chat app-extension for Elftia",
+  "description": "Standalone dedicated-window Quick Chat app-extension for Elftia",
   "license": "MIT",
   "engines": {
     "node": ">=20"
@@ -22,12 +22,12 @@
     "test:renderer": "vitest run src/renderer",
     "build": "node scripts/build.mjs",
     "verify:contract": "node scripts/verify-contract.mjs",
-    "verify:opaque-projection": "node scripts/verify-opaque-projection.mjs",
+    "verify:window-runtime": "node scripts/verify-window-runtime.mjs",
     "verify:artifact": "node scripts/verify-artifact.mjs",
     "verify:artifact-negative": "node scripts/verify-artifact-negative.mjs",
     "verify:clean-checkout": "node scripts/verify-clean-checkout.mjs",
     "verify:dist": "elftia-plugin verify dist/quick-chat",
-    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run verify:contract && npm run build && npm run verify:opaque-projection && npm run verify:artifact && npm run verify:artifact-negative && npm run verify:clean-checkout && npm run verify:dist",
+    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run verify:contract && npm run build && npm run verify:window-runtime && npm run verify:artifact && npm run verify:artifact-negative && npm run verify:clean-checkout && npm run verify:dist",
     "verify:repro": "node scripts/verify-reproducible.mjs",
     "pack": "node scripts/pack.mjs"
   },

@@ -127,6 +127,10 @@ try {
     nodeScript(root, 'verify-artifact.mjs', 'source artifact verification'),
     'source artifact verification'
   );
+  const sourceRuntime = parseJsonOutput(
+    nodeScript(root, 'verify-window-runtime.mjs', 'source built-window verification'),
+    'source built-window verification'
+  );
   const checkedOutSummary = parseJsonOutput(
     nodeScript(checkout, 'verify-artifact.mjs', 'checked-out artifact verification'),
     'checked-out artifact verification'
@@ -141,6 +145,15 @@ try {
   const sourceArchive = await readFile(resolve(root, 'release', 'quick-chat-0.1.0.tgz'));
 
   nodeScript(checkout, 'build.mjs', 'clean checkout build');
+  const rebuiltRuntime = parseJsonOutput(
+    nodeScript(checkout, 'verify-window-runtime.mjs', 'rebuilt window verification'),
+    'rebuilt window verification'
+  );
+  if (JSON.stringify(rebuiltRuntime) !== JSON.stringify(sourceRuntime)) {
+    throw new Error(
+      `clean checkout window vertical differs from source:\n${JSON.stringify({ sourceRuntime, rebuiltRuntime }, null, 2)}`
+    );
+  }
   const rebuiltSummary = parseJsonOutput(
     nodeScript(checkout, 'verify-artifact.mjs', 'rebuilt checkout artifact verification'),
     'rebuilt checkout artifact verification'
@@ -164,6 +177,7 @@ try {
       textFiles,
       contentSha256,
       artifact: sourceSummary,
+      windowRuntime: sourceRuntime,
       packBytes: sourceArchive.byteLength,
       packSha256: sha(sourceArchive),
       result: 'identical',

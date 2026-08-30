@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "source": {
     "repository": "elftia",
-    "commit": "02068b25f44b8fabedc20b30d4863aa05a83d209",
-    "tree": "6edb8a63e30721c2c6400cd800e32577e27f62c7",
+    "commit": "8d83a992e54124f7d38ed8ee5735a63bba6f6e74",
+    "tree": "dce634dfaca9f1fab60719c96bb274c73f76d778",
     "clean": true,
-    "hostApiVersion": "1.57.0"
+    "hostApiVersion": "1.58.0"
   },
   "localChannelPrerequisite": {
     "reviewedCommit": "b5b5b1a29c2bb544f144ee974350b80c14c38435",
@@ -17,15 +17,13 @@
     "name": "@elftia/plugin-types",
     "version": "1.46.0",
     "file": "vendor/elftia-plugin-types-1.46.0.tgz",
-    "hostApiVersion": "1.57.0",
-    "sha256": "2e1afd9d79a7f1771aad8ae3512ccc8c884c5985f11721658ef938344ace9d02",
-    "npmShasum": "8749341bbeed5f29ec830ce358311b86fd500c94",
-    "npmIntegrity": "sha512-nQxnLnYRLN4ZMlbEwk24kE4PStoCmdyjwhxsIIDLBQEREOr/8f5gZ3POaXvfOXjbg5z6E+pSAjt4IGQSMlz7nw=="
+    "hostApiVersion": "1.58.0",
+    "sha256": "5a22f0fc8d28bb7f385ed81b6b04b6c01f57eb6a7ff5800507b9e01442c569c4",
+    "npmShasum": "845de7f1df5e37eee9e33794357b4f28fef75cdf",
+    "npmIntegrity": "sha512-vv5jcHhaMHWodaC34mxOyrVFOhxPEc7sWV/VWjA1KlX8xcA7kVEi7cMptKY0JX94SSbDmsLGidMzJP0i9BSxnA=="
   },
   "qualification": {
-    "command": "npx vitest run <25 focused Host contract test files>",
-    "testFiles": 25,
-    "tests": 205,
-    "result": "passed"
+    "command": "quick-chat-window-runtime-host review cycle",
+    "result": "clean-with-environment-limited-verification"
   }
 }

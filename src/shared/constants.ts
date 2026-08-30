@@ -1,6 +1,6 @@
 export const PLUGIN_ID = 'quick-chat' as const;
 export const PLUGIN_VERSION = '0.1.0' as const;
-export const HOST_API_VERSION = '1.57.0' as const;
+export const HOST_API_VERSION = '1.58.0' as const;
 export const SURFACE_ID = 'default' as const;
 export const ENDPOINT_ID = 'default' as const;
 export const CHAT_ID = 'owner' as const;
@@ -22,6 +22,3 @@ export const MAX_ACTIVITY_SERIALIZED_UTF8_BYTES = 24 * 1024;
 export const MAX_TRANSCRIPT_SERIALIZED_UTF8_BYTES = 224 * 1024;
 export const MAX_MESSAGES = 200;
 export const MAX_RESNAPSHOT_FAILURES = 3;
-export const MAX_REMOTE_DOM_UTF8_BYTES = 512 * 1024;
-export const MAX_REMOTE_DOM_NODES = 4096;
-export const MAX_REMOTE_DOM_DEPTH = 64;

@@ -16,21 +16,19 @@
     ]
   },
   "contributes": {
-    "renderer": {
-      "entry": "index.mjs",
-      "execution": "opaque-frame-v1",
-      "requiredMajor": 1,
-      "requiredMinor": 57,
-      "builtAgainst": "1.57.0"
-    },
     "main": {
       "entry": "index.cjs",
       "requiredMajor": 1,
-      "requiredMinor": 57,
-      "builtAgainst": "1.57.0"
+      "requiredMinor": 58,
+      "builtAgainst": "1.58.0"
     },
     "quickChat": {
       "id": "default",
+      "entry": "index.mjs",
+      "execution": "dedicated-window-v1",
+      "requiredMajor": 1,
+      "requiredMinor": 58,
+      "builtAgainst": "1.58.0",
       "window": {
         "defaultWidth": 380,
         "defaultHeight": 520,

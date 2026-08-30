@@ -1,92 +1,148 @@
-import type { AgentUiQuickChatHostApi, HostThemeSnapshot } from '@elftia/plugin-types';
+import type {
+  AgentUiTheme,
+  HostThemeSnapshot,
+  QuickChatWindowActivationContext,
+  QuickChatWindowHost,
+  QuickChatWindowModule,
+} from '@elftia/plugin-types';
+import * as React from 'react';
+import { createRoot, type Root } from 'react-dom/client';
 
-import { SURFACE_ID } from '../shared/constants';
 import { QUICK_CHAT_NAMESPACE, QUICK_CHAT_RESOURCES, resolveLocale } from './localization';
-import { createQuickChatSurface, type ThemeStore } from './surface';
+import { QuickChatApplication, type ThemeStore } from './surface';
 
-const fallbackTheme = Object.freeze({
-  resolvedMode: 'light',
-  isDarkMode: false,
-}) satisfies HostThemeSnapshot;
-let disposers: (() => void)[] = [];
-
-function drainDisposers(): void {
-  const retained = disposers;
-  disposers = [];
-  for (const dispose of retained.reverse()) dispose();
+interface WindowRuntime {
+  readonly disposed: () => boolean;
+  dispose(): void;
 }
 
-function browserLocale(): string {
-  return typeof navigator === 'undefined' ? 'en' : navigator.language;
+function assertHost(host: unknown): asserts host is QuickChatWindowHost {
+  if (!host || typeof host !== 'object') throw new TypeError('Quick Chat Host is required');
+  const value = host as Partial<QuickChatWindowHost>;
+  if (typeof value.version !== 'string' || !value.compat || typeof value.compat !== 'object') {
+    throw new TypeError('Quick Chat Host version contract is invalid');
+  }
+  if (!value.i18n || typeof value.i18n.registerNamespace !== 'function') {
+    throw new TypeError('Quick Chat Host i18n contract is invalid');
+  }
+  if (
+    !value.theme ||
+    typeof value.theme.getSnapshot !== 'function' ||
+    typeof value.theme.subscribe !== 'function'
+  ) {
+    throw new TypeError('Quick Chat Host theme contract is invalid');
+  }
+  if (!value.localChannel || typeof value.localChannel.attach !== 'function') {
+    throw new TypeError('Quick Chat Host Local Channel contract is invalid');
+  }
+  if (!value.close || typeof value.close.request !== 'function') {
+    throw new TypeError('Quick Chat Host close contract is invalid');
+  }
 }
 
-function createThemeStore(host: Partial<Pick<AgentUiQuickChatHostApi, 'theme'>>): ThemeStore {
-  let snapshot = host.theme?.getSnapshot() ?? fallbackTheme;
+function assertRoot(root: unknown): asserts root is HTMLElement {
+  if (
+    !root ||
+    typeof root !== 'object' ||
+    !('nodeType' in root) ||
+    root.nodeType !== 1 ||
+    !('replaceChildren' in root) ||
+    typeof root.replaceChildren !== 'function'
+  ) {
+    throw new TypeError('Quick Chat activation requires an HTMLElement root');
+  }
+}
+
+function createThemeStore(
+  theme: AgentUiTheme,
+  isDisposed: () => boolean
+): { readonly store: ThemeStore; readonly dispose: () => void } {
+  let snapshot: HostThemeSnapshot = theme.getSnapshot();
   const listeners = new Set<() => void>();
-  const unsubscribe = host.theme?.subscribe((next) => {
+  const unsubscribe = theme.subscribe((next) => {
+    if (isDisposed()) return;
     snapshot = next;
     for (const listener of listeners) listener();
   });
-  if (unsubscribe) disposers.push(unsubscribe);
-  return Object.freeze({
-    getSnapshot: () => snapshot,
-    subscribe(listener: () => void) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
+  return {
+    store: Object.freeze({
+      getSnapshot: () => snapshot,
+      subscribe(listener: () => void) {
+        if (isDisposed()) return () => undefined;
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
+    }),
+    dispose() {
+      listeners.clear();
+      unsubscribe();
     },
-  });
+  };
 }
 
-export function activate(host: Partial<AgentUiQuickChatHostApi>): void {
-  drainDisposers();
-  const { i18n, localChannels, quickChat, react, ui } = host;
-  if (!quickChat || !react || !ui) return;
+function activateWindow(hostValue: QuickChatWindowHost, rootValue: HTMLElement): WindowRuntime {
+  assertHost(hostValue);
+  assertRoot(rootValue);
 
-  if (i18n) {
-    disposers.push(i18n.registerNamespace(QUICK_CHAT_NAMESPACE, QUICK_CHAT_RESOURCES));
-  }
-  const themeStore = createThemeStore(host);
-  const locale = resolveLocale(browserLocale());
+  let disposed = false;
+  let reactRoot: Root | null = null;
+  let unregisterLocale: (() => void) | null = null;
+  let disposeTheme: (() => void) | null = null;
+  const isDisposed = () => disposed;
 
-  if (!localChannels) {
-    const React = react.instance;
-    const Unavailable = () =>
-      React.createElement(
-        'main',
-        { 'data-testid': 'quick-chat-root', 'aria-label': translateFallback(locale, 'title') },
-        React.createElement(
-          'p',
-          { role: 'status', 'data-testid': 'quick-chat-state' },
-          translateFallback(locale, 'unavailable')
-        )
-      );
-    disposers.push(
-      quickChat.registerSurface({
-        id: SURFACE_ID,
-        render: Unavailable,
+  const dispose = (): void => {
+    if (disposed) return;
+    disposed = true;
+    globalThis.removeEventListener('pagehide', dispose);
+
+    const mountedRoot = reactRoot;
+    reactRoot = null;
+    try {
+      mountedRoot?.unmount();
+    } finally {
+      try {
+        disposeTheme?.();
+      } finally {
+        disposeTheme = null;
+        try {
+          unregisterLocale?.();
+        } finally {
+          unregisterLocale = null;
+          rootValue.replaceChildren();
+        }
+      }
+    }
+  };
+
+  try {
+    rootValue.replaceChildren();
+    unregisterLocale = hostValue.i18n.registerNamespace(QUICK_CHAT_NAMESPACE, QUICK_CHAT_RESOURCES);
+    const theme = createThemeStore(hostValue.theme, isDisposed);
+    disposeTheme = theme.dispose;
+    reactRoot = createRoot(rootValue);
+    reactRoot.render(
+      React.createElement(QuickChatApplication, {
+        localChannel: hostValue.localChannel,
+        close: hostValue.close,
+        themeStore: theme.store,
+        locale: resolveLocale(typeof navigator === 'undefined' ? 'en' : navigator.language),
+        isDisposed,
       })
     );
-    return;
+    globalThis.addEventListener('pagehide', dispose);
+  } catch (error) {
+    dispose();
+    throw error;
   }
 
-  const Surface = createQuickChatSurface({ localChannels, react, ui }, themeStore, locale);
-  disposers.push(
-    quickChat.registerSurface({
-      id: SURFACE_ID,
-      render: Surface,
-    })
-  );
+  return Object.freeze({ disposed: isDisposed, dispose });
 }
 
-function translateFallback(
-  locale: keyof typeof QUICK_CHAT_RESOURCES,
-  key: 'title' | 'unavailable'
-): string {
-  return QUICK_CHAT_RESOURCES[locale][key];
-}
+const quickChatWindowModule = Object.freeze({
+  activate(host: QuickChatWindowHost, { root }: QuickChatWindowActivationContext) {
+    const runtime = activateWindow(host, root);
+    return () => runtime.dispose();
+  },
+}) satisfies QuickChatWindowModule;
 
-export function deactivate(): void {
-  drainDisposers();
-}
-
-export default { activate, deactivate };
+export default quickChatWindowModule;

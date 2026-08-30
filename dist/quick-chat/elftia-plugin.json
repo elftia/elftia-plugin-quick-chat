@@ -18,23 +18,20 @@
     ]
   },
   "contributes": {
-    "renderer": {
-      "entry": "index.mjs",
-      "execution": "opaque-frame-v1",
-      "requiredMajor": 1,
-      "requiredMinor": 57,
-      "builtAgainst": "1.57.0",
-      "checksum": "sha512-QvFmCHRZ7N+DeW9G61RV37WwJIF5ZnUDdXBtkZKEHNMLKvnTJLEavxGZRwF8uGKtUwsNe2pjh/QCJY90jOgsZg=="
-    },
     "main": {
       "entry": "index.cjs",
       "requiredMajor": 1,
-      "requiredMinor": 57,
-      "builtAgainst": "1.57.0",
-      "checksum": "sha512-jtWOHMuu1hQvr50LfFQgV70Ff+vyCvatuY5rReluXh0nCh3sFOhyxODlvIFP/WkV2lDReJOEDPx6Uc3yKMxukw=="
+      "requiredMinor": 58,
+      "builtAgainst": "1.58.0",
+      "checksum": "sha512-0kNv4MA8Px9+pV9E7NyAno/F127WxxYT6t5tr6TwN5oK3kSZHwFGa+jmWjlJ70ca1fWi+Sl4iRKB8FYAvWRFuA=="
     },
     "quickChat": {
       "id": "default",
+      "entry": "index.mjs",
+      "execution": "dedicated-window-v1",
+      "requiredMajor": 1,
+      "requiredMinor": 58,
+      "builtAgainst": "1.58.0",
       "window": {
         "defaultWidth": 380,
         "defaultHeight": 520,
@@ -42,7 +39,8 @@
         "minHeight": 360,
         "maxWidth": 720,
         "maxHeight": 900
-      }
+      },
+      "checksum": "sha512-R0zg0xIwpKcbHisaVTsq6yVB2ZJQHR3j5Teg9N+wv0kmKGG7EJmiHGjlSIXl8zaPQ5Xc9V3//TWzjhsO5r38Xw=="
     },
     "localChannels": [
       {
