@@ -19,7 +19,7 @@ import {
 import { serializedUtf8Bytes, utf8Bytes } from './conversation-state';
 import quickChatWindowModule from './index';
 import { QUICK_CHAT_RESOURCES, resolveLocale, translate } from './localization';
-import { selectRenderableMessages } from './surface';
+import { selectRenderableMessages } from './transcript-projection';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -169,9 +169,11 @@ describe('Quick Chat dedicated window module', () => {
           'surface.ts',
           'conversation-session.ts',
           'conversation-state.ts',
+          'icons.ts',
           'submission.ts',
           'localization.ts',
           'styles.ts',
+          'transcript-projection.ts',
         ].map((file) => readFile(new URL(file, import.meta.url), 'utf8'))
       )
     ).join('\n');
@@ -217,10 +219,18 @@ describe('Quick Chat dedicated window module', () => {
     expect(screen.getByRole('heading', { name: 'Quick Chat' })).toBeInTheDocument();
     expect(screen.getByRole('log')).toHaveAttribute('aria-live', 'polite');
     await waitFor(() => expect(screen.getByLabelText('Message Elfi')).toHaveFocus());
+    expect(root.querySelector('.quick-chat-brand-mark')).toHaveTextContent('E');
+    expect(root.querySelector('.quick-chat-empty-icon svg')).not.toBeNull();
+    expect(screen.getByTestId('quick-chat-send').querySelector('svg')).not.toBeNull();
     const css = screen.getByTestId('quick-chat-styles').textContent;
     expect(css).toContain('-webkit-app-region: drag');
     expect(css).toContain('-webkit-app-region: no-drag');
     expect(css).toContain(':focus-visible');
+    expect(css).toContain('--surface-0: 50 37% 97%');
+    expect(css).toContain('--surface-1: 48 31% 94%');
+    expect(css).toContain('--primary: 15 56% 52%');
+    expect(css).not.toContain('#7558d8');
+    expect(css).not.toContain('#f5f2ff');
     expect(root.querySelector('[data-theme="light"]')).not.toBeNull();
 
     act(() => fixture.emitTheme({ resolvedMode: 'dark', isDarkMode: true }));
@@ -244,6 +254,22 @@ describe('Quick Chat dedicated window module', () => {
     expect(root.querySelector('script')).toBeNull();
     expect(root.querySelector('img')).toBeNull();
     expect(root.innerHTML).not.toContain('<script>alert');
+  });
+
+  it('uses Elfi compact-window message structure without renaming Quick Chat', async () => {
+    const fixture = harness({
+      messages: [hostMessage(0, 'hello'), hostMessage(1, 'welcome', 'assistant')],
+    });
+    const { root } = activate(fixture);
+    expect(await screen.findByRole('heading', { name: 'Quick Chat' })).toBeInTheDocument();
+    expect(root.querySelectorAll('.quick-chat-message-row')).toHaveLength(2);
+    expect(root.querySelectorAll('.quick-chat-avatar svg')).toHaveLength(2);
+    expect(root.querySelectorAll('.quick-chat-message-bubble')).toHaveLength(2);
+    expect(screen.getByTestId('quick-chat-message-user')).toHaveClass('quick-chat-message-user');
+    expect(screen.getByTestId('quick-chat-message-assistant')).toHaveClass(
+      'quick-chat-message-assistant'
+    );
+    expect(root.querySelector('.quick-chat-composer-row')).not.toBeNull();
   });
 
   it('submits once, preserves a newer draft, and reconciles the Host message', async () => {

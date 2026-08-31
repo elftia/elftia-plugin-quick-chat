@@ -60,8 +60,8 @@ const expectedManifest = (mainChecksum, quickChatChecksum) => ({
       requiredMinor: 58,
       builtAgainst: '1.58.0',
       window: {
-        defaultWidth: 380,
-        defaultHeight: 520,
+        defaultWidth: 400,
+        defaultHeight: 560,
         minWidth: 320,
         minHeight: 360,
         maxWidth: 720,

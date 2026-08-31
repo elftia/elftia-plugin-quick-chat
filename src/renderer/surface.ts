@@ -1,5 +1,4 @@
 import type {
-  HostLocalChannelMessage,
   HostThemeSnapshot,
   QuickChatWindowCloseIntent,
   QuickChatWindowLocalChannel,
@@ -7,17 +6,13 @@ import type {
 import * as React from 'react';
 import type { ReactElement, ReactNode } from 'react';
 
-import { MAX_MESSAGES, MAX_TRANSCRIPT_SERIALIZED_UTF8_BYTES } from '../shared/constants';
 import { ConversationSession } from './conversation-session';
-import {
-  INITIAL_CONVERSATION_STATE,
-  serializedUtf8Bytes,
-  takeProjectedTextPrefix,
-  type ConversationState,
-} from './conversation-state';
+import { INITIAL_CONVERSATION_STATE, type ConversationState } from './conversation-state';
+import { BotIcon, CloseIcon, RetryIcon, SendIcon, StopIcon, UserIcon } from './icons';
 import { translate } from './localization';
 import { isNormalizedSubmitIntent } from './submission';
 import { QUICK_CHAT_STYLES } from './styles';
+import { selectRenderableMessages } from './transcript-projection';
 
 export interface ThemeStore {
   readonly getSnapshot: () => HostThemeSnapshot;
@@ -30,40 +25,6 @@ interface QuickChatApplicationProps {
   readonly themeStore: ThemeStore;
   readonly locale: string;
   readonly isDisposed: () => boolean;
-}
-
-export interface RenderableTranscript {
-  readonly messages: readonly HostLocalChannelMessage[];
-  readonly omitted: boolean;
-}
-
-export function selectRenderableMessages(
-  messages: readonly HostLocalChannelMessage[]
-): RenderableTranscript {
-  const bounded = messages.slice(-MAX_MESSAGES);
-  const selected: HostLocalChannelMessage[] = [];
-  let remaining = MAX_TRANSCRIPT_SERIALIZED_UTF8_BYTES - serializedUtf8Bytes([]);
-  let omitted = messages.length > bounded.length;
-  for (let index = bounded.length - 1; index >= 0; index -= 1) {
-    const message = bounded[index];
-    if (!message) continue;
-    const separatorSize = selected.length === 0 ? 0 : 1;
-    const size = serializedUtf8Bytes(message.content) + separatorSize;
-    if (size <= remaining) {
-      selected.push(message);
-      remaining -= size;
-      continue;
-    }
-    omitted = true;
-    if (selected.length === 0 && remaining > 16) {
-      selected.push({
-        ...message,
-        content: `${takeProjectedTextPrefix(message.content, remaining - 3, remaining - 3)}…`,
-      });
-    }
-    break;
-  }
-  return { messages: selected.reverse(), omitted };
 }
 
 function readEventValue(event: unknown): string {
@@ -132,7 +93,9 @@ export function QuickChatApplication({
   }, [isDisposed, state.activity.length, state.messages.length, state.revision, state.streamText]);
 
   const unavailable = state.phase === 'revoked' || state.status === 'suspended';
-  const canSend = Boolean(session) && !unavailable && !pending && state.phase !== 'loading';
+  const canEdit = Boolean(session) && !unavailable && state.phase !== 'loading';
+  const canSend = canEdit && !pending && state.status !== 'processing';
+  const sendDisabled = !canSend || draft.trim().length === 0;
   const copy = (key: Parameters<typeof translate>[1]) => translate(locale, key);
 
   const updateDraft = (value: string): void => {
@@ -202,6 +165,23 @@ export function QuickChatApplication({
                   : 'idle';
   const transcript = selectRenderableMessages(state.messages);
   const transcriptChildren: ReactNode[] = [];
+  const isEmpty =
+    state.messages.length === 0 &&
+    !state.streamText &&
+    state.activity.length === 0 &&
+    state.phase === 'ready' &&
+    state.status === 'idle';
+
+  if (isEmpty) {
+    transcriptChildren.push(
+      h(
+        'section',
+        { key: 'empty', className: 'quick-chat-empty', 'data-testid': 'quick-chat-empty' },
+        h('span', { className: 'quick-chat-empty-icon', 'aria-hidden': true }, h(BotIcon, {})),
+        h('h2', null, copy('empty'))
+      )
+    );
+  }
 
   if (state.hasOlderMessages) {
     transcriptChildren.push(
@@ -230,34 +210,48 @@ export function QuickChatApplication({
     );
   }
   for (const message of transcript.messages) {
+    const isUser = message.role === 'user';
     const label = message.role === 'user' ? copy('user') : copy('assistant');
     transcriptChildren.push(
       h(
         'article',
         {
           key: message.id,
-          className: `quick-chat-message quick-chat-message-${message.role}`,
+          className: `quick-chat-message-row quick-chat-message-${message.role}`,
           'data-testid': `quick-chat-message-${message.role}`,
           'aria-label': label,
         },
-        h('h2', null, label),
-        h('p', null, message.content)
+        h(
+          'span',
+          { className: 'quick-chat-avatar', 'aria-hidden': true },
+          isUser ? h(UserIcon, {}) : h(BotIcon, {})
+        ),
+        h('div', { className: 'quick-chat-message-bubble' }, h('p', null, message.content))
       )
     );
   }
   if (state.streamText || state.activity.length > 0) {
     transcriptChildren.push(
       h(
-        'section',
+        'article',
         {
           key: 'stream',
-          className: 'quick-chat-stream',
+          className: 'quick-chat-message-row quick-chat-message-assistant quick-chat-stream',
           'data-testid': 'quick-chat-stream',
+          'data-streaming': 'true',
+          'data-stream-phase': state.streamText ? 'generating' : 'thinking',
           'aria-label': copy('stream'),
         },
-        h('h2', null, copy('stream')),
-        state.streamText ? h('p', null, state.streamText) : null,
-        ...state.activity.map((item, index) => h('p', { key: `${item.kind}-${index}` }, item.text))
+        h('span', { className: 'quick-chat-avatar', 'aria-hidden': true }, h(BotIcon, {})),
+        h(
+          'div',
+          { className: 'quick-chat-message-bubble' },
+          state.streamText ? h('p', null, state.streamText) : null,
+          ...state.activity.map((item, index) =>
+            h('p', { key: `${item.kind}-${index}`, className: 'quick-chat-activity' }, item.text)
+          ),
+          h('span', { className: 'quick-chat-stream-cursor', 'aria-hidden': true })
+        )
       )
     );
   }
@@ -282,7 +276,26 @@ export function QuickChatApplication({
     h(
       'header',
       { className: 'quick-chat-chrome', 'data-testid': 'quick-chat-chrome' },
-      h('h1', null, copy('title')),
+      h(
+        'div',
+        { className: 'quick-chat-identity' },
+        h('span', { className: 'quick-chat-brand-mark', 'aria-hidden': true }, 'E'),
+        h(
+          'div',
+          { className: 'quick-chat-identity-copy' },
+          h('h1', null, copy('title')),
+          h(
+            'p',
+            {
+              className: 'quick-chat-subtitle',
+              role: 'status',
+              'aria-live': 'polite',
+              'data-testid': 'quick-chat-state',
+            },
+            copy(statusKey)
+          )
+        )
+      ),
       h(
         'button',
         {
@@ -292,22 +305,9 @@ export function QuickChatApplication({
           'data-testid': 'quick-chat-close',
           onClick: () => void close.request().catch(() => undefined),
         },
-        '×'
+        h(CloseIcon, {})
       )
     ),
-    h(
-      'p',
-      {
-        className: 'quick-chat-status quick-chat-no-drag',
-        role: 'status',
-        'aria-live': 'polite',
-        'data-testid': 'quick-chat-state',
-      },
-      copy(statusKey)
-    ),
-    state.messages.length === 0 && state.phase === 'ready' && state.status === 'idle'
-      ? h('p', { className: 'quick-chat-empty', 'data-testid': 'quick-chat-empty' }, copy('empty'))
-      : null,
     h(
       'section',
       {
@@ -328,57 +328,65 @@ export function QuickChatApplication({
         'aria-label': copy('composer'),
         'data-testid': 'quick-chat-composer',
       },
-      h('textarea', {
-        ref: composerRef,
-        value: draft,
-        disabled: !canSend,
-        placeholder: copy('placeholder'),
-        'aria-label': copy('placeholder'),
-        'aria-disabled': !canSend,
-        'data-testid': 'quick-chat-composer-input',
-        onChange: (event: unknown) => updateDraft(readEventValue(event)),
-        onKeyDown: (event: unknown) => {
-          if (isNormalizedSubmitIntent(event)) void send();
-        },
-      }),
       h(
         'div',
-        { className: 'quick-chat-actions' },
-        h(
-          'button',
-          {
-            type: 'button',
-            disabled: !canSend,
-            onClick: () => void send(),
-            'aria-label': copy('send'),
-            'data-testid': 'quick-chat-send',
+        { className: 'quick-chat-composer-row' },
+        h('textarea', {
+          ref: composerRef,
+          value: draft,
+          disabled: !canEdit,
+          placeholder: copy('placeholder'),
+          'aria-label': copy('placeholder'),
+          'aria-disabled': !canEdit,
+          'data-testid': 'quick-chat-composer-input',
+          rows: 1,
+          onChange: (event: unknown) => updateDraft(readEventValue(event)),
+          onKeyDown: (event: unknown) => {
+            if (isNormalizedSubmitIntent(event)) void send();
           },
-          copy('send')
-        ),
-        state.status === 'processing' && state.phase !== 'revoked'
-          ? h(
-              'button',
-              {
-                type: 'button',
-                onClick: () => void session?.stop(),
-                'aria-label': copy('stop'),
-                'data-testid': 'quick-chat-stop',
-              },
-              copy('stop')
-            )
-          : null,
-        state.error?.retryable || state.status === 'suspended'
-          ? h(
-              'button',
-              {
-                type: 'button',
-                onClick: () => void retry(),
-                'aria-label': copy('retry'),
-                'data-testid': 'quick-chat-retry',
-              },
-              copy('retry')
-            )
-          : null
+        }),
+        h(
+          'div',
+          { className: 'quick-chat-actions' },
+          state.status === 'processing' && state.phase !== 'revoked'
+            ? h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'quick-chat-action quick-chat-stop',
+                  onClick: () => void session?.stop(),
+                  'aria-label': copy('stop'),
+                  'data-testid': 'quick-chat-stop',
+                },
+                h(StopIcon, {})
+              )
+            : h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'quick-chat-action quick-chat-send',
+                  disabled: sendDisabled,
+                  onClick: () => void send(),
+                  'aria-label': copy('send'),
+                  'data-testid': 'quick-chat-send',
+                },
+                h(SendIcon, {})
+              ),
+          state.error?.retryable || state.status === 'suspended'
+            ? h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'quick-chat-retry',
+                  onClick: () => void retry(),
+                  'aria-label': copy('retry'),
+                  'data-testid': 'quick-chat-retry',
+                },
+                h(RetryIcon, {}),
+                h('span', null, copy('retry'))
+              )
+            : null
+        )
       ),
       composerError
         ? h(
