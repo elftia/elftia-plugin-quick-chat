@@ -13,7 +13,7 @@ const artifact = resolve(outputRoot, 'quick-chat');
 const release = process.env.QUICK_CHAT_RELEASE_ROOT
   ? resolve(process.env.QUICK_CHAT_RELEASE_ROOT)
   : resolve(root, 'release');
-const archive = resolve(release, 'quick-chat-0.1.0.tgz');
+const archive = resolve(release, 'quick-chat-0.1.1.tgz');
 const files = (await inventory(artifact)).map((entry) => entry.path);
 
 await rm(release, { recursive: true, force: true });

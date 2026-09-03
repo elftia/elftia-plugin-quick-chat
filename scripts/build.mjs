@@ -12,7 +12,7 @@ const outputRoot = process.env.QUICK_CHAT_DIST_ROOT
   ? resolve(process.env.QUICK_CHAT_DIST_ROOT)
   : resolve(root, 'dist');
 const pluginRoot = resolve(outputRoot, 'quick-chat');
-const banner = '/* elftia-plugin-quick-chat@0.1.0 | Host API 1.58.0 */';
+const banner = '/* elftia-plugin-quick-chat@0.1.1 | Host API 1.58.0 */';
 const bundledRuntimeSources = new Set([
   'node_modules/react/cjs/react.production.min.js',
   'node_modules/react/index.js',

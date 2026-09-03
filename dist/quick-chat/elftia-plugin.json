@@ -1,6 +1,6 @@
 {
   "name": "quick-chat",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "kind": "app-extension",
   "permissions": [
     "host:local-channel"
@@ -23,7 +23,7 @@
       "requiredMajor": 1,
       "requiredMinor": 58,
       "builtAgainst": "1.58.0",
-      "checksum": "sha512-0kNv4MA8Px9+pV9E7NyAno/F127WxxYT6t5tr6TwN5oK3kSZHwFGa+jmWjlJ70ca1fWi+Sl4iRKB8FYAvWRFuA=="
+      "checksum": "sha512-qibmpRKgIMdBYl7EDbdDrJSUc7D4SX52gwgPzhTNPJVCjVvasu9C2A4e3DEYRd3XvAueXvQ/CPaxcfFVpLkSsw=="
     },
     "quickChat": {
       "id": "default",
@@ -40,7 +40,7 @@
         "maxWidth": 720,
         "maxHeight": 900
       },
-      "checksum": "sha512-kPORFPR2UY4YD2uAFLTDA7s8m+NRGFLqvV+axmN08geTw7ZsZq+mb4UifJfbuDeQ64toabfvKq+y0rTYzyAF+Q=="
+      "checksum": "sha512-gyEKx+4S6rIBR3jgE2i1MJr+Oiyj1bQh2DZI4AuvkFz4fbpqKRTF65TXdsVYOgQCfr5hAlZ5hFU4Y/7YOr1jsg=="
     },
     "localChannels": [
       {

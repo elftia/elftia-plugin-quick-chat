@@ -142,7 +142,7 @@ try {
   }
 
   nodeScript(root, 'pack.mjs', 'source artifact pack');
-  const sourceArchive = await readFile(resolve(root, 'release', 'quick-chat-0.1.0.tgz'));
+  const sourceArchive = await readFile(resolve(root, 'release', 'quick-chat-0.1.1.tgz'));
 
   nodeScript(checkout, 'build.mjs', 'clean checkout build');
   const rebuiltRuntime = parseJsonOutput(
@@ -165,7 +165,7 @@ try {
   }
 
   nodeScript(checkout, 'pack.mjs', 'clean checkout pack');
-  const checkedOutArchive = await readFile(resolve(checkout, 'release', 'quick-chat-0.1.0.tgz'));
+  const checkedOutArchive = await readFile(resolve(checkout, 'release', 'quick-chat-0.1.1.tgz'));
   if (!checkedOutArchive.equals(sourceArchive)) {
     throw new Error('clean checkout pack bytes differ from the source checkout');
   }
