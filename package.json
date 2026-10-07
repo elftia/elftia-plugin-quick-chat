@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "@elftia/agent-spec": "1.25.0",
-    "@elftia/plugin-kit": "0.1.0",
+    "@elftia/plugin-kit": "0.2.1",
     "@elftia/plugin-types": "file:vendor/elftia-plugin-types-1.46.0.tgz",
     "@eslint/js": "9.39.2",
     "@testing-library/jest-dom": "6.9.1",

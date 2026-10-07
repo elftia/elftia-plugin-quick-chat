@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "algorithm": "sha256",
   "selfExcluded": true,
-  "inventorySha256": "95ed61be0117d59d421bc5b01ed46f91598e4b813962cf89417bf34ce7700447",
+  "inventorySha256": "6a6b09574a701094371051a9d4dbf2650d5eb52d901011e09108f3ec48cec553",
   "files": [
     {
       "path": "LICENSE",
@@ -26,8 +26,8 @@
     },
     {
       "path": "elftia-plugin.json",
-      "size": 1386,
-      "sha256": "47d748321b430067c343809b450404f6cfaa43e22475142684691db39d99537b"
+      "size": 1417,
+      "sha256": "99a1963d11351a81620768b80a4b68fd8d5fdba6107c9d891b4eaf69bf2a9a5c"
     },
     {
       "path": "main/index.cjs",
