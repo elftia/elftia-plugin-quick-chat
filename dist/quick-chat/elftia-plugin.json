@@ -1,6 +1,6 @@
 {
   "name": "quick-chat",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "minElftiaVersion": "0.2.8",
   "kind": "app-extension",
   "permissions": [
@@ -24,7 +24,7 @@
       "requiredMajor": 1,
       "requiredMinor": 58,
       "builtAgainst": "1.58.0",
-      "checksum": "sha512-qibmpRKgIMdBYl7EDbdDrJSUc7D4SX52gwgPzhTNPJVCjVvasu9C2A4e3DEYRd3XvAueXvQ/CPaxcfFVpLkSsw=="
+      "checksum": "sha512-tJ9rEeUY4g3XzdfkHPVD/tqlwpdhiHSBKUbsfXpqkQQvGe6aijGQrlbcTx+6TS+cXKeLI7nHuJDJz0Lao0tCxw=="
     },
     "quickChat": {
       "id": "default",
@@ -41,7 +41,7 @@
         "maxWidth": 720,
         "maxHeight": 900
       },
-      "checksum": "sha512-gyEKx+4S6rIBR3jgE2i1MJr+Oiyj1bQh2DZI4AuvkFz4fbpqKRTF65TXdsVYOgQCfr5hAlZ5hFU4Y/7YOr1jsg=="
+      "checksum": "sha512-e32a6JwnGTX0KhdBj11RxKP1egifd2p9q12sDdzau84fYLXfHueR2DPizsFXazqsdCUTdyQnVY2Ka/sugo3IDw=="
     },
     "localChannels": [
       {

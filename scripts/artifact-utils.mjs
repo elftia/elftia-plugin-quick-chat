@@ -2,12 +2,13 @@ import { createHash } from 'node:crypto';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { relative, resolve, sep } from 'node:path';
 
-export async function filesUnder(directory) {
+export async function filesUnder(directory, skipDirectory = () => false) {
   const output = [];
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const absolute = resolve(directory, entry.name);
-    if (entry.isDirectory()) output.push(...(await filesUnder(absolute)));
-    else if (entry.isFile()) output.push(absolute);
+    if (entry.isDirectory()) {
+      if (!skipDirectory(entry.name)) output.push(...(await filesUnder(absolute, skipDirectory)));
+    } else if (entry.isFile()) output.push(absolute);
     else throw new Error(`artifact contains a non-regular entry: ${absolute}`);
   }
   return output.sort((left, right) => (left < right ? -1 : left > right ? 1 : 0));

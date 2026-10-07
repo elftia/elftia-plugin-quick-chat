@@ -29,7 +29,7 @@ const REACT_SOURCE_MAP_ALLOWLIST = new Set([
 
 const expectedManifest = (mainChecksum, quickChatChecksum) => ({
   name: 'quick-chat',
-  version: '0.1.1',
+  version: '0.1.2',
   minElftiaVersion: '0.2.8',
   kind: 'app-extension',
   permissions: ['host:local-channel'],

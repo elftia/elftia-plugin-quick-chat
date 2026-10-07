@@ -1,4 +1,4 @@
-/* elftia-plugin-quick-chat@0.1.1 | Host API 1.58.0 */
+/* elftia-plugin-quick-chat@0.1.2 | Host API 1.58.0 */
 "use strict";
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;

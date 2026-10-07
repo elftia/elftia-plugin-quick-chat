@@ -146,17 +146,12 @@ try {
   await rm(temp, { recursive: true, force: true });
 }
 
-const productFiles = (await filesUnder(root)).filter((file) => {
-  const normalized = file.split(sep).join('/');
-  return (
-    !normalized.includes('/node_modules/') &&
-    !normalized.includes('/dist/') &&
-    !normalized.includes('/.git/') &&
-    !normalized.includes('/.contract-') &&
-    !normalized.includes('/rasen/') &&
-    !normalized.includes('/.rasen/')
-  );
-});
+const productFiles = await filesUnder(
+  root,
+  (name) =>
+    ['node_modules', 'dist', '.git', 'rasen', '.rasen'].includes(name) ||
+    name.startsWith('.contract-')
+);
 for (const file of productFiles) {
   if (!/\.(?:json|mjs|ts)$/.test(file)) continue;
   const text = await readFile(file, 'utf8');

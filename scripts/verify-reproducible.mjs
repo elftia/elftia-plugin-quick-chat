@@ -63,9 +63,9 @@ try {
   packFrom(outputA, releaseA);
   packFrom(outputB, releaseB);
   packFrom(resolve(root, 'dist'), releaseSource);
-  const archiveA = await readFile(resolve(releaseA, 'quick-chat-0.1.1.tgz'));
-  const archiveB = await readFile(resolve(releaseB, 'quick-chat-0.1.1.tgz'));
-  const archiveSource = await readFile(resolve(releaseSource, 'quick-chat-0.1.1.tgz'));
+  const archiveA = await readFile(resolve(releaseA, 'quick-chat-0.1.2.tgz'));
+  const archiveB = await readFile(resolve(releaseB, 'quick-chat-0.1.2.tgz'));
+  const archiveSource = await readFile(resolve(releaseSource, 'quick-chat-0.1.2.tgz'));
   if (!archiveA.equals(archiveB) || !archiveA.equals(archiveSource)) {
     throw new Error('source and isolated packed archives differ');
   }
