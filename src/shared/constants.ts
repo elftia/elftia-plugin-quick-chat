@@ -1,6 +1,6 @@
 export const PLUGIN_ID = 'quick-chat' as const;
-export const PLUGIN_VERSION = '0.1.0' as const;
-export const HOST_API_VERSION = '1.58.0' as const;
+export const PLUGIN_VERSION = '0.2.0' as const;
+export const HOST_API_VERSION = '2.0.0' as const;
 export const SURFACE_ID = 'default' as const;
 export const ENDPOINT_ID = 'default' as const;
 export const CHAT_ID = 'owner' as const;

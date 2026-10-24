@@ -64,14 +64,22 @@ try {
       }),
     /manifest exact allowlist or Host ABI drift/
   );
-  await rejects(
-    'compatibility-drift',
-    (artifact) =>
-      mutateManifest(artifact, (manifest) => {
-        manifest.contributes.quickChat.requiredMinor = 57;
-      }),
-    /manifest exact allowlist or Host ABI drift/
-  );
+  for (const slot of ['main', 'quickChat']) {
+    for (const [field, value] of [
+      ['requiredMajor', 1],
+      ['requiredMinor', 1],
+      ['builtAgainst', '1.58.0'],
+    ]) {
+      await rejects(
+        `${slot}-${field}-compatibility-drift`,
+        (artifact) =>
+          mutateManifest(artifact, (manifest) => {
+            manifest.contributes[slot][field] = value;
+          }),
+        /manifest exact allowlist or Host ABI drift/
+      );
+    }
+  }
   await rejects(
     'entry-drift',
     (artifact) =>

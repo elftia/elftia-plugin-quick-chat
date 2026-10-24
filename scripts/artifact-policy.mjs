@@ -29,7 +29,7 @@ const REACT_SOURCE_MAP_ALLOWLIST = new Set([
 
 const expectedManifest = (mainChecksum, quickChatChecksum) => ({
   name: 'quick-chat',
-  version: '0.1.2',
+  version: '0.2.0',
   minElftiaVersion: '0.2.8',
   kind: 'app-extension',
   permissions: ['host:local-channel'],
@@ -48,18 +48,18 @@ const expectedManifest = (mainChecksum, quickChatChecksum) => ({
   contributes: {
     main: {
       entry: 'index.cjs',
-      requiredMajor: 1,
-      requiredMinor: 58,
-      builtAgainst: '1.58.0',
+      requiredMajor: 2,
+      requiredMinor: 0,
+      builtAgainst: '2.0.0',
       checksum: mainChecksum,
     },
     quickChat: {
       id: 'default',
       entry: 'index.mjs',
       execution: 'dedicated-window-v1',
-      requiredMajor: 1,
-      requiredMinor: 58,
-      builtAgainst: '1.58.0',
+      requiredMajor: 2,
+      requiredMinor: 0,
+      builtAgainst: '2.0.0',
       window: {
         defaultWidth: 400,
         defaultHeight: 560,
@@ -208,13 +208,13 @@ export async function verifyArtifact(artifact) {
 
   const provenance = await readJson(resolve(artifact, 'PROVENANCE.json'));
   if (
-    provenance.source?.commit !== '8d83a992e54124f7d38ed8ee5735a63bba6f6e74' ||
-    provenance.source?.tree !== 'dce634dfaca9f1fab60719c96bb274c73f76d778' ||
-    provenance.source?.hostApiVersion !== '1.58.0' ||
+    provenance.source?.commit !== '1cddd18616112fc1db09d8e1da46f42d9fa1e7bc' ||
+    provenance.source?.tree !== '281dba23cd35c37fc919353181fcfc8e43d0c45e' ||
+    provenance.source?.hostApiVersion !== '2.0.0' ||
     provenance.package?.sha256 !==
-      '5a22f0fc8d28bb7f385ed81b6b04b6c01f57eb6a7ff5800507b9e01442c569c4' ||
+      '5616fcc5d741da1e782f5547ac1fb33e78c27de69c652f50679ef9bed81b9539' ||
     provenance.package?.npmIntegrity !==
-      'sha512-vv5jcHhaMHWodaC34mxOyrVFOhxPEc7sWV/VWjA1KlX8xcA7kVEi7cMptKY0JX94SSbDmsLGidMzJP0i9BSxnA=='
+      'sha512-Vb9Dj+luFmX5BqzDSJ9jUO1vT1uBXWU0Q/RGSx8eKZvix1Tf9BKcv5CP8J6WQIw+tMc5C1gkPHfgWDauecO67Q=='
   ) {
     throw new Error('contract provenance drift');
   }

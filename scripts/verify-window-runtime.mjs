@@ -133,8 +133,8 @@ let unsubscribeThemeCalls = 0;
 let themeListener;
 let themeSnapshot = { resolvedMode: 'light', isDarkMode: false };
 const host = {
-  version: '1.58.0',
-  compat: { builtAgainst: '1.58.0', requiredMajor: 1, requiredMinor: 58 },
+  version: '2.0.0',
+  compat: { builtAgainst: '2.0.0', requiredMajor: 2, requiredMinor: 0 },
   i18n: {
     registerNamespace(namespace, resources) {
       if (namespace !== 'quick-chat' || !resources.en || !resources['zh-CN']) {

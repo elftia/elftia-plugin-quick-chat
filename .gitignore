@@ -3,7 +3,7 @@ coverage/
 release/
 .rasen/
 *.tgz
-!vendor/elftia-plugin-types-1.46.0.tgz
+!vendor/elftia-plugin-types-2.0.0.tgz
 .contract-stage/
 .contract-inspect/
 .contract-source*.tar

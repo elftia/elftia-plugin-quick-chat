@@ -13,4 +13,14 @@ The only integration input is a clean, committed `dist/quick-chat` tree. Do not 
 - `npm run verify:repro` — compare two isolated deterministic builds byte-for-byte.
 - `npm run pack` — emit the clean plugin archive under `release/`.
 
-The build contract deliberately keeps npm package version `1.46.0` separate from embedded Host API version `1.58.0`. See `contract/plugin-types.provenance.json`.
+## Host API 2 migration
+
+Quick Chat `0.2.0` requires Host API `2.0.0` for both its main provider and dedicated-window renderer (`requiredMajor: 2`, `requiredMinor: 0`). Its scoped Local Channel, close intent, capabilities, permissions, and renderer ownership are unchanged. Conversation model selection remains Host-owned; this producer has no default/background/vision LLM selector calls or plugin-owned model state.
+
+The only SDK input is `file:vendor/elftia-plugin-types-2.0.0.tgz`, built and packed from the canonical Host SDK. `manifest/elftia-plugin.source.json` remains the manifest source; `npm run build` generates `dist/quick-chat`, contribution checksums, provenance copies, and integrity metadata. Do not hand-edit generated artifacts.
+
+`npm run verify:contract` checks the checksum-free source manifest and lockfile identity as well as the SDK archive. The finished-tree gate independently pins both code contributions to Host API 2.0.0, with negative artifact cases for major, minor, and built-against drift on each contribution. These checks do not replace provenance, integrity, runtime-boundary, or reproducibility gates.
+
+The vendored SDK is qualified from clean canonical source commit `1cddd18616112fc1db09d8e1da46f42d9fa1e7bc`, tree `281dba23cd35c37fc919353181fcfc8e43d0c45e`, with CJS/ESM/DTS builds, actual CJS/ESM Host API `2.0.0` smoke checks, and `npm pack`. `contract/plugin-types.provenance.json` records the genuine archive identity and qualification; independent source/digest pins in `scripts/verify-contract.mjs` and `scripts/artifact-policy.mjs` enforce it against the vendored bytes and locked dependency. This is a local qualified archive, not an npm publication.
+
+Run `npm ci`, `npm run verify`, `npm run verify:repro`, and `npm run pack` to reproduce the qualified producer output. The archive is `release/quick-chat-0.2.0.tgz`. Rebuilt `dist/quick-chat` must be committed before consumers update their Fleet pin.

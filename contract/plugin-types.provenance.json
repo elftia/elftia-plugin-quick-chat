@@ -2,28 +2,22 @@
   "schemaVersion": 1,
   "source": {
     "repository": "elftia",
-    "commit": "8d83a992e54124f7d38ed8ee5735a63bba6f6e74",
-    "tree": "dce634dfaca9f1fab60719c96bb274c73f76d778",
+    "commit": "1cddd18616112fc1db09d8e1da46f42d9fa1e7bc",
+    "tree": "281dba23cd35c37fc919353181fcfc8e43d0c45e",
     "clean": true,
-    "hostApiVersion": "1.58.0"
-  },
-  "localChannelPrerequisite": {
-    "reviewedCommit": "b5b5b1a29c2bb544f144ee974350b80c14c38435",
-    "deliveredCommit": "2065617049faaeff2fc0050511e72afbd90ef54a",
-    "stablePatchId": "ff4bac7297220e02c9c3fcdb7dc6ed696f902f32",
-    "patchEquivalent": true
+    "hostApiVersion": "2.0.0"
   },
   "package": {
     "name": "@elftia/plugin-types",
-    "version": "1.46.0",
-    "file": "vendor/elftia-plugin-types-1.46.0.tgz",
-    "hostApiVersion": "1.58.0",
-    "sha256": "5a22f0fc8d28bb7f385ed81b6b04b6c01f57eb6a7ff5800507b9e01442c569c4",
-    "npmShasum": "845de7f1df5e37eee9e33794357b4f28fef75cdf",
-    "npmIntegrity": "sha512-vv5jcHhaMHWodaC34mxOyrVFOhxPEc7sWV/VWjA1KlX8xcA7kVEi7cMptKY0JX94SSbDmsLGidMzJP0i9BSxnA=="
+    "version": "2.0.0",
+    "file": "vendor/elftia-plugin-types-2.0.0.tgz",
+    "hostApiVersion": "2.0.0",
+    "sha256": "5616fcc5d741da1e782f5547ac1fb33e78c27de69c652f50679ef9bed81b9539",
+    "npmShasum": "df9b228fc67cf8674b69f1e995edb82872a2bf7c",
+    "npmIntegrity": "sha512-Vb9Dj+luFmX5BqzDSJ9jUO1vT1uBXWU0Q/RGSx8eKZvix1Tf9BKcv5CP8J6WQIw+tMc5C1gkPHfgWDauecO67Q=="
   },
   "qualification": {
-    "command": "quick-chat-window-runtime-host review cycle",
-    "result": "clean-with-environment-limited-verification"
+    "command": "npm run build && npm pack --ignore-scripts --json; node plugin-sdk-smoke.mjs packages/plugin-types (explicit clean source path)",
+    "result": "clean committed source; tsup CJS/ESM/DTS build and pack passed; actual CJS/ESM HOST_API_VERSION 2.0.0 smoke passed; git status porcelain empty"
   }
 }
