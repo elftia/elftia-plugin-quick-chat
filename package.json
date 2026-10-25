@@ -1,6 +1,6 @@
 {
   "name": "elftia-plugin-quick-chat",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Standalone dedicated-window Quick Chat app-extension for Elftia",
@@ -34,7 +34,7 @@
   "devDependencies": {
     "@elftia/agent-spec": "1.25.0",
     "@elftia/plugin-kit": "0.2.1",
-    "@elftia/plugin-types": "file:vendor/elftia-plugin-types-1.46.0.tgz",
+    "@elftia/plugin-types": "file:vendor/elftia-plugin-types-2.0.0.tgz",
     "@eslint/js": "9.39.2",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.0",

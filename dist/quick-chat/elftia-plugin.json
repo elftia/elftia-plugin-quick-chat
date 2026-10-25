@@ -1,6 +1,6 @@
 {
   "name": "quick-chat",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "minElftiaVersion": "0.2.8",
   "kind": "app-extension",
   "permissions": [
@@ -21,18 +21,18 @@
   "contributes": {
     "main": {
       "entry": "index.cjs",
-      "requiredMajor": 1,
-      "requiredMinor": 58,
-      "builtAgainst": "1.58.0",
-      "checksum": "sha512-tJ9rEeUY4g3XzdfkHPVD/tqlwpdhiHSBKUbsfXpqkQQvGe6aijGQrlbcTx+6TS+cXKeLI7nHuJDJz0Lao0tCxw=="
+      "requiredMajor": 2,
+      "requiredMinor": 0,
+      "builtAgainst": "2.0.0",
+      "checksum": "sha512-ouNNTlTGf6jRAk9MF0wO+yfSQgFb7nQnqiC34WC0sCJph61jd5NMdiOz/BBgFBHst2tWEJAEG+ArWsiwVY0qEg=="
     },
     "quickChat": {
       "id": "default",
       "entry": "index.mjs",
       "execution": "dedicated-window-v1",
-      "requiredMajor": 1,
-      "requiredMinor": 58,
-      "builtAgainst": "1.58.0",
+      "requiredMajor": 2,
+      "requiredMinor": 0,
+      "builtAgainst": "2.0.0",
       "window": {
         "defaultWidth": 400,
         "defaultHeight": 560,
@@ -41,7 +41,7 @@
         "maxWidth": 720,
         "maxHeight": 900
       },
-      "checksum": "sha512-e32a6JwnGTX0KhdBj11RxKP1egifd2p9q12sDdzau84fYLXfHueR2DPizsFXazqsdCUTdyQnVY2Ka/sugo3IDw=="
+      "checksum": "sha512-322tzhI+BNxxuuiL+IwiPAqdTJLTQPPwciFbn+wDb1KL35bAyTEF/Rg3Cdn/goon67oAbVWdHXQSBGWsfLNETA=="
     },
     "localChannels": [
       {

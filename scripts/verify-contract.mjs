@@ -12,20 +12,19 @@ const root = resolve(import.meta.dirname, '..');
 const provenancePath = resolve(root, 'contract', 'plugin-types.provenance.json');
 const provenance = await readJson(provenancePath);
 const expected = {
-  commit: '8d83a992e54124f7d38ed8ee5735a63bba6f6e74',
-  tree: 'dce634dfaca9f1fab60719c96bb274c73f76d778',
-  localPatch: 'ff4bac7297220e02c9c3fcdb7dc6ed696f902f32',
-  packageVersion: '1.46.0',
-  hostApiVersion: '1.58.0',
-  sha256: '5a22f0fc8d28bb7f385ed81b6b04b6c01f57eb6a7ff5800507b9e01442c569c4',
-  npmShasum: '845de7f1df5e37eee9e33794357b4f28fef75cdf',
+  commit: '658350268537e8ab83d208665b82565ace6b7224',
+  tree: '08c096c10d2e9fb20c54a0b3cf06e52288836202',
+  packageVersion: '2.0.0',
+  hostApiVersion: '2.0.0',
+  sha256: 'f162fde3497c884cd04e084290ea1502f83f9b467566f0c38dde24075285b190',
+  npmShasum: 'bd4a162fb6878ff27a2246972a44fa88c724c17c',
   npmIntegrity:
-    'sha512-vv5jcHhaMHWodaC34mxOyrVFOhxPEc7sWV/VWjA1KlX8xcA7kVEi7cMptKY0JX94SSbDmsLGidMzJP0i9BSxnA==',
+    'sha512-d7Lvs2TKGoIGZuKxpdX6yacih/BY+/UJLtQudCDgv4oIVT/V35gFRnzdanuAdO8b259AAW9XIBmppzC2FcJuUQ==',
 };
-const provisional = {
-  packageVersion: '1.46.0',
-  hostApiVersion: '1.57.0',
-  sha256: '2e1afd9d79a7f1771aad8ae3512ccc8c884c5985f11721658ef938344ace9d02',
+const previousMajor = {
+  packageVersion: expected.packageVersion,
+  hostApiVersion: '1.58.0',
+  sha256: expected.sha256,
 };
 
 function requireEqual(actual, wanted, label) {
@@ -36,15 +35,11 @@ requireEqual(provenance.source.commit, expected.commit, 'reviewed source commit'
 requireEqual(provenance.source.tree, expected.tree, 'reviewed source tree');
 requireEqual(provenance.source.clean, true, 'reviewed source cleanliness');
 requireEqual(provenance.source.hostApiVersion, expected.hostApiVersion, 'source Host API');
+requireEqual(provenance.package.name, '@elftia/plugin-types', 'package provenance name');
 requireEqual(
-  provenance.localChannelPrerequisite.stablePatchId,
-  expected.localPatch,
-  'Local prerequisite patch-id'
-);
-requireEqual(
-  provenance.localChannelPrerequisite.patchEquivalent,
-  true,
-  'Local prerequisite equivalence'
+  provenance.package.file,
+  'vendor/elftia-plugin-types-2.0.0.tgz',
+  'package provenance archive'
 );
 requireEqual(provenance.package.version, expected.packageVersion, 'package provenance version');
 requireEqual(provenance.package.hostApiVersion, expected.hostApiVersion, 'package Host API');
@@ -56,10 +51,28 @@ const packageJson = await readJson(resolve(root, 'package.json'));
 const dependency = packageJson.devDependencies?.['@elftia/plugin-types'];
 requireEqual(
   dependency,
-  'file:vendor/elftia-plugin-types-1.46.0.tgz',
+  'file:vendor/elftia-plugin-types-2.0.0.tgz',
   'portable plugin-types dependency'
 );
+const manifest = await readJson(resolve(root, 'manifest', 'elftia-plugin.source.json'));
+requireEqual(manifest.name, 'quick-chat', 'source manifest name');
+requireEqual(manifest.version, packageJson.version, 'source manifest version');
+for (const slot of ['main', 'quickChat']) {
+  const contribution = manifest.contributes?.[slot];
+  requireEqual(contribution?.requiredMajor, 2, `source contributes.${slot} Host API major`);
+  requireEqual(contribution?.requiredMinor, 0, `source contributes.${slot} Host API minor`);
+  requireEqual(
+    contribution?.builtAgainst,
+    expected.hostApiVersion,
+    `source contributes.${slot} builtAgainst`
+  );
+  if (Object.hasOwn(contribution, 'checksum')) {
+    throw new Error(`source contributes.${slot} must not carry generated checksum metadata`);
+  }
+}
 const lock = await readJson(resolve(root, 'package-lock.json'));
+requireEqual(lock.version, packageJson.version, 'lockfile package version');
+requireEqual(lock.packages?.['']?.version, packageJson.version, 'lockfile root version');
 requireEqual(
   lock.packages?.['']?.devDependencies?.['@elftia/plugin-types'],
   dependency,
@@ -69,6 +82,7 @@ const lockEntry = lock.packages?.['node_modules/@elftia/plugin-types'];
 requireEqual(lockEntry?.version, expected.packageVersion, 'locked plugin-types version');
 requireEqual(lockEntry?.resolved, dependency, 'locked plugin-types resolution');
 requireEqual(lockEntry?.integrity, expected.npmIntegrity, 'locked plugin-types integrity');
+requireEqual(lockEntry?.link === true, false, 'locked plugin-types must not be linked');
 
 const tarball = resolve(root, provenance.package.file);
 const bytes = await readFile(tarball);
@@ -83,14 +97,14 @@ function assertCanonicalIdentity(candidate) {
   requireEqual(candidate.sha256, expected.sha256, 'candidate archive SHA-256');
 }
 
-let provisionalRejected = false;
+let previousMajorRejected = false;
 try {
-  assertCanonicalIdentity(provisional);
+  assertCanonicalIdentity(previousMajor);
 } catch {
-  provisionalRejected = true;
+  previousMajorRejected = true;
 }
-if (!provisionalRejected) {
-  throw new Error('provisional Host API 1.57.0 archive identity was not rejected');
+if (!previousMajorRejected) {
+  throw new Error('previous-major Host API archive identity was not rejected');
 }
 
 const temp = await mkdtemp(resolve(tmpdir(), 'elftia-quick-chat-contract-'));
@@ -103,8 +117,8 @@ try {
   const contract = requireFromHere(resolve(temp, 'package', 'dist', 'index.cjs'));
   requireEqual(contract.HOST_API_VERSION, expected.hostApiVersion, 'packed Host API version');
   const declaration = await readFile(resolve(temp, 'package', 'dist', 'index.d.ts'), 'utf8');
-  if (!declaration.includes('declare const HOST_API_VERSION: "1.58.0";')) {
-    throw new Error('packed declaration does not export Host API 1.58.0');
+  if (!declaration.includes(`declare const HOST_API_VERSION: "${expected.hostApiVersion}";`)) {
+    throw new Error(`packed declaration does not export Host API ${expected.hostApiVersion}`);
   }
   const rendererDeclaration = await readFile(
     resolve(temp, 'package', 'src', 'renderer.ts'),
@@ -171,13 +185,12 @@ if (!`${installedContract.toLowerCase()}${sep}`.startsWith(normalizedRoot)) {
 
 console.log(
   JSON.stringify({
-    contract: '@elftia/plugin-types@1.46.0',
-    hostApi: '1.58.0',
+    contract: `@elftia/plugin-types@${expected.packageVersion}`,
+    hostApi: expected.hostApiVersion,
     sha256: provenance.package.sha256,
     integrity: provenance.package.npmIntegrity,
     sourceCommit: provenance.source.commit,
     sourceTree: provenance.source.tree,
-    localPatchId: provenance.localChannelPrerequisite.stablePatchId,
-    provisional157Rejected: provisionalRejected,
+    previousMajorRejected,
   })
 );

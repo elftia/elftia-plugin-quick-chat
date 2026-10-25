@@ -1,6 +1,6 @@
 {
   "name": "quick-chat",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "minElftiaVersion": "0.2.8",
   "kind": "app-extension",
   "permissions": ["host:local-channel"],
@@ -19,17 +19,17 @@
   "contributes": {
     "main": {
       "entry": "index.cjs",
-      "requiredMajor": 1,
-      "requiredMinor": 58,
-      "builtAgainst": "1.58.0"
+      "requiredMajor": 2,
+      "requiredMinor": 0,
+      "builtAgainst": "2.0.0"
     },
     "quickChat": {
       "id": "default",
       "entry": "index.mjs",
       "execution": "dedicated-window-v1",
-      "requiredMajor": 1,
-      "requiredMinor": 58,
-      "builtAgainst": "1.58.0",
+      "requiredMajor": 2,
+      "requiredMinor": 0,
+      "builtAgainst": "2.0.0",
       "window": {
         "defaultWidth": 400,
         "defaultHeight": 560,
