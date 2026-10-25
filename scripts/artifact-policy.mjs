@@ -208,13 +208,13 @@ export async function verifyArtifact(artifact) {
 
   const provenance = await readJson(resolve(artifact, 'PROVENANCE.json'));
   if (
-    provenance.source?.commit !== '1cddd18616112fc1db09d8e1da46f42d9fa1e7bc' ||
-    provenance.source?.tree !== '281dba23cd35c37fc919353181fcfc8e43d0c45e' ||
+    provenance.source?.commit !== '658350268537e8ab83d208665b82565ace6b7224' ||
+    provenance.source?.tree !== '08c096c10d2e9fb20c54a0b3cf06e52288836202' ||
     provenance.source?.hostApiVersion !== '2.0.0' ||
     provenance.package?.sha256 !==
-      '5616fcc5d741da1e782f5547ac1fb33e78c27de69c652f50679ef9bed81b9539' ||
+      'f162fde3497c884cd04e084290ea1502f83f9b467566f0c38dde24075285b190' ||
     provenance.package?.npmIntegrity !==
-      'sha512-Vb9Dj+luFmX5BqzDSJ9jUO1vT1uBXWU0Q/RGSx8eKZvix1Tf9BKcv5CP8J6WQIw+tMc5C1gkPHfgWDauecO67Q=='
+      'sha512-d7Lvs2TKGoIGZuKxpdX6yacih/BY+/UJLtQudCDgv4oIVT/V35gFRnzdanuAdO8b259AAW9XIBmppzC2FcJuUQ=='
   ) {
     throw new Error('contract provenance drift');
   }

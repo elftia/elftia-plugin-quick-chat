@@ -12,14 +12,14 @@ const root = resolve(import.meta.dirname, '..');
 const provenancePath = resolve(root, 'contract', 'plugin-types.provenance.json');
 const provenance = await readJson(provenancePath);
 const expected = {
-  commit: '1cddd18616112fc1db09d8e1da46f42d9fa1e7bc',
-  tree: '281dba23cd35c37fc919353181fcfc8e43d0c45e',
+  commit: '658350268537e8ab83d208665b82565ace6b7224',
+  tree: '08c096c10d2e9fb20c54a0b3cf06e52288836202',
   packageVersion: '2.0.0',
   hostApiVersion: '2.0.0',
-  sha256: '5616fcc5d741da1e782f5547ac1fb33e78c27de69c652f50679ef9bed81b9539',
-  npmShasum: 'df9b228fc67cf8674b69f1e995edb82872a2bf7c',
+  sha256: 'f162fde3497c884cd04e084290ea1502f83f9b467566f0c38dde24075285b190',
+  npmShasum: 'bd4a162fb6878ff27a2246972a44fa88c724c17c',
   npmIntegrity:
-    'sha512-Vb9Dj+luFmX5BqzDSJ9jUO1vT1uBXWU0Q/RGSx8eKZvix1Tf9BKcv5CP8J6WQIw+tMc5C1gkPHfgWDauecO67Q==',
+    'sha512-d7Lvs2TKGoIGZuKxpdX6yacih/BY+/UJLtQudCDgv4oIVT/V35gFRnzdanuAdO8b259AAW9XIBmppzC2FcJuUQ==',
 };
 const previousMajor = {
   packageVersion: expected.packageVersion,

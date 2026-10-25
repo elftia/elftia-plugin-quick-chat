@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "algorithm": "sha256",
   "selfExcluded": true,
-  "inventorySha256": "021470cb697b403e3def82188542004dd9a2c3d56715571b88fc5babc10ee5c0",
+  "inventorySha256": "b9201e0431e60c60584eb21ae75d099c59a0efddbff10e688371d5011abcc8c6",
   "files": [
     {
       "path": "LICENSE",
@@ -16,8 +16,8 @@
     },
     {
       "path": "PROVENANCE.json",
-      "size": 990,
-      "sha256": "e4d498ce002440c806852f485f6c1ddcf2568d88545067a6d0ebce4c774ba02c"
+      "size": 988,
+      "sha256": "4d11f0e2749495f0323ab30d81f53783b3817b6cb1c6026771ac94e734050982"
     },
     {
       "path": "THIRD_PARTY_LICENSES.txt",
